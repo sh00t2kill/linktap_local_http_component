@@ -1,0 +1,12 @@
+{
+    "codeowners": ["@sh00t2kill"],
+    "config_flow": true,
+    "dependencies": [],
+    "documentation": "linktap_local_http_custom_component",
+    "issue_tracker": "linktap_local_http_custom_component",
+    "domain": "linktap",
+    "name": "Local HTTP API for Linktap",
+    "requirements": [],
+    "version": "0.0.1",
+    "iot_class": "local_push"
+  }

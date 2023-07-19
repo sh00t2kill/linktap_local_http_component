@@ -1,0 +1,9 @@
+DOMAIN = "linktap"
+STATUS_CMD = 3
+START_CMD = 6
+STOP_CMD = 7
+TAP_ID = "ID of Tap"
+GW_ID = "ID of Gateway"
+GW_IP = "Local IP Address of Gateway"
+NAME = "Friendly Name of Tap"
+DEFAULT_TIME = 900
