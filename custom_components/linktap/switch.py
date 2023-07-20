@@ -7,6 +7,7 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.const import STATE_UNKNOWN
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity import *
 from homeassistant.helpers.update_coordinator import (CoordinatorEntity,
@@ -17,7 +18,8 @@ _LOGGER = logging.getLogger(__name__)
 
 from .const import DOMAIN, TAP_ID, GW_ID, NAME, DEFAULT_TIME
 
-async def async_setup_platform(
+#async def async_setup_platform(
+async def async_setup_entry(
     hass, config, async_add_entities, discovery_info=None
 ):
     """Setup the switch platform."""
@@ -33,12 +35,13 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
         self._id = self._name
         self._gw_id = hass.data[DOMAIN]["conf"][GW_ID]
         self.tap_id = hass.data[DOMAIN]["conf"][TAP_ID]
-        self.entity_id = DOMAIN + "." + self._id
+        self.entity_id = DOMAIN + ".linktap_" + self._id
         self.tap_api = coordinator.tap_api
         self.platform = "switch"
         self.hass = hass
         self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{self.tap_id}")
         self._attr_device_info = self.coordinator.get_device()
+        self._attr_icon = "mdi:water-pump"
         self._attrs = {
             "data": self.coordinator.data,
             "duration_entity": self.duration_entity

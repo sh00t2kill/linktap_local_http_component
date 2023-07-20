@@ -2,8 +2,8 @@ import asyncio
 from json.decoder import JSONDecodeError
 import logging
 from datetime import timedelta
-import time
-import random
+#import time
+#import random
 import async_timeout
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -18,12 +18,15 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import (DataUpdateCoordinator,
                                                       UpdateFailed)
 
-from .const import DOMAIN, TAP_ID, GW_ID, GW_IP, NAME
+from .const import DOMAIN, TAP_ID, GW_ID, GW_IP, NAME, PLATFORMS
 from .linktap_local import LinktapLocal
 
-PLATFORMS = ['switch', 'binary_sensor', 'sensor']
+
 
 _LOGGER = logging.getLogger(__name__)
+
+async def async_setup(_hass, _config):
+    return True
 
 async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry)-> bool:
     """Set up the platform."""
@@ -37,11 +40,11 @@ async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry)-> bool
     try:
         gw_id = await linker.get_gw_id()
     except JSONDecodeError:
-        time.sleep(1)
+        #time.sleep(1)
         try:
             gw_id = await linker.get_gw_id()
         except JSONDecodeError:
-            time.sleep(random.randint(1,4))
+            #time.sleep(random.randint(1,4))
             gw_id = await linker.get_gw_id()
 
     _LOGGER.debug(f"Found GW_ID: {gw_id}")
@@ -54,37 +57,20 @@ async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry)-> bool
     }
 
     coordinator = LinktapCoordinator(hass, linker, conf)
-    await coordinator.async_refresh()
-    _LOGGER.debug("Coordinator has synced")
+    await coordinator.async_config_entry_first_refresh()
+    #_LOGGER.debug("Coordinator has synced")
 
     hass.data[DOMAIN] = {
         "conf": conf,
         "coordinator": coordinator,
     }
 
-    #_LOGGER.debug("Create Device")
-    #device_registry = dr.async_get(hass)
-    #device_info = coordinator.get_device()
-    #device_registry.async_get_or_create(
-    #    config_entry_id=entry.entry_id,
-    #    identifiers=device_info['identifiers'],
-    #    manufacturer=device_info['manufacturer'],
-    #    name=device_info['name']
-    #)
-
-    _LOGGER.debug("Load Number")
-    hass.async_create_task(async_load_platform(hass, "number", DOMAIN, {}, conf))
-    _LOGGER.debug("Load Binary Sensors")
-    hass.async_create_task(async_load_platform(hass, "binary_sensor", DOMAIN, {}, conf))
-    _LOGGER.debug("Load Sensors")
-    hass.async_create_task(async_load_platform(hass, "sensor", DOMAIN, {}, conf))
-    _LOGGER.debug("Load Switch")
-    hass.async_create_task(async_load_platform(hass, "switch", DOMAIN, {}, conf))
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True
 
 async def async_unload_entry(hass: core.HomeAssistant, entry: ConfigEntry) -> bool:
-    """Unload an NSW Rural Fire Service Fire Danger component config entry."""
+    """Unload a component config entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
@@ -131,6 +117,16 @@ class LinktapCoordinator(DataUpdateCoordinator):
             },
             name=self.hass.data[DOMAIN]["conf"][NAME],
             manufacturer="Linktap",
+            model=self.hass.data[DOMAIN]["conf"][TAP_ID],
             configuration_url="http://" + self.hass.data[DOMAIN]["conf"][GW_IP] + "/"
         )
+        #return {
+        #    "identifiers": {
+        #        (DOMAIN, self.hass.data[DOMAIN]["conf"][TAP_ID])
+        #    },
+        #    "name": self.hass.data[DOMAIN]["conf"][NAME],
+        #    "via_device": (DOMAIN, self.hass.data[DOMAIN]["conf"][TAP_ID]),
+        #    "manufacturer": "Linktap",
+        #    "configuration_url": "http://" + self.hass.data[DOMAIN]["conf"][GW_IP] + "/"
+        #}
 

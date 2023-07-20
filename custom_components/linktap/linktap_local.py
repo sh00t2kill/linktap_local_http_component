@@ -2,8 +2,8 @@ import aiohttp
 import re
 import json
 import logging
-import time
-import random
+#import time
+#import random
 
 from .const import START_CMD, STATUS_CMD, STOP_CMD, DEFAULT_TIME
 
@@ -44,7 +44,7 @@ class LinktapLocal:
         await session.close()
 
         if response.find("404") != -1:
-            time.sleep(random.randint(1,4))
+            #time.sleep(random.randint(1,4))
             _LOGGER.debug("Got a 404 issue: Wait and try again")
             async with aiohttp.ClientSession() as session:
                 async with await session.post(url, json=data, headers=headers) as resp:
@@ -98,14 +98,4 @@ class LinktapLocal:
         }
         status = await self._request(data)
         return status["gw_id"]
-
-
-#linker = LinktapLocal()
-#linker.set_ip("192.168.1.109")
-
-#gw_id = "EE54B60C004B1200"
-#front_garden = "67B93C27004B1200_4"
-
-#status = await linker.get_tap_status(gw_id, front_garden)
-#print(status)
 

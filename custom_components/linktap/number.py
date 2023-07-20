@@ -12,7 +12,8 @@ _LOGGER = logging.getLogger(__name__)
 
 from .const import DOMAIN, TAP_ID, GW_ID, NAME, DEFAULT_TIME
 
-async def async_setup_platform(
+#async def async_setup_platform(
+async def async_setup_entry(
     hass, config, async_add_entities, discovery_info=None
 ):
     """Setup the switch platform."""
@@ -37,6 +38,7 @@ class LinktapNumber(CoordinatorEntity, RestoreNumber):
         self._attr_native_max_value = 120
         self._attr_native_step = 5
         self._attr_native_unit_of_measurement = "m"
+        self._attr_icon = "mdi:clock"
 
         self._attrs = {}
 
@@ -53,7 +55,6 @@ class LinktapNumber(CoordinatorEntity, RestoreNumber):
 
     @property
     def unique_id(self):
-        _LOGGER.debug(self._attr_device_info)
         return self._attr_unique_id
 
     @property

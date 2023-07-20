@@ -18,28 +18,30 @@ from .const import DOMAIN, TAP_ID, GW_ID, NAME
 
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup_platform(
+#async def async_setup_platform(
+async def async_setup_entry(
     hass, config, async_add_entities, discovery_info=None
 ):
     """Setup the sensor platform."""
     coordinator = hass.data[DOMAIN]["coordinator"]
     sensors = []
-    sensors.append(LinktapSensor(coordinator, hass, "Signal", "signal", "%"))
-    sensors.append(LinktapSensor(coordinator, hass, "Battery", "battery", "%"))
-    sensors.append(LinktapSensor(coordinator, hass, "Total Duration", "total_duration", "s"))
-    sensors.append(LinktapSensor(coordinator, hass, "Remaining Duration", "remain_duration", "s"))
-    sensors.append(LinktapSensor(coordinator, hass, "Speed", "speed", "lpm"))
-    sensors.append(LinktapSensor(coordinator, hass, "Volume", "volume", "lpm"))
-    sensors.append(LinktapSensor(coordinator, hass, "Volume Limit", "volume_limit", "lpm"))
-    sensors.append(LinktapSensor(coordinator, hass, "Failsafe Duration", "failsafe_duration", "s"))
-    sensors.append(LinktapSensor(coordinator, hass, "Plan Mode", "plan_mode", "mode"))
-    sensors.append(LinktapSensor(coordinator, hass, "Plan SN", "plan_sn", "sn"))
+    sensors.append(LinktapSensor(coordinator, hass, data_attribute="signal", unit="%", icon="mdi:percent-circle"))
+    sensors.append(LinktapSensor(coordinator, hass, data_attribute="battery", unit="%", device_class="battery"))
+    sensors.append(LinktapSensor(coordinator, hass, data_attribute="total_duration", unit="s", icon="mdi:clock"))
+    sensors.append(LinktapSensor(coordinator, hass, data_attribute="remain_duration", unit="s", icon="mdi:clock"))
+    sensors.append(LinktapSensor(coordinator, hass, data_attribute="speed", unit="lpm", icon="mdi:speedometer"))
+    sensors.append(LinktapSensor(coordinator, hass, data_attribute="volume", unit="lpm", icon="mdi:water-percent"))
+    sensors.append(LinktapSensor(coordinator, hass, data_attribute="volume_limit", unit="lpm", icon="mdi:water-percent"))
+    sensors.append(LinktapSensor(coordinator, hass, data_attribute="failsafe_duration", unit="s", icon="mdi:clock"))
+    sensors.append(LinktapSensor(coordinator, hass, data_attribute="plan_mode", unit="mode", icon="mdi:note"))
+    sensors.append(LinktapSensor(coordinator, hass, data_attribute="plan_sn", unit="sn", icon="mdi:note"))
     async_add_entities(sensors, True)
 
 class LinktapSensor(CoordinatorEntity, SensorEntity):
 
-    def __init__(self, coordinator: DataUpdateCoordinator, hass, name, data_attribute, unit):
+    def __init__(self, coordinator: DataUpdateCoordinator, hass, data_attribute, unit, device_class=False, icon=False):
         super().__init__(coordinator)
+        name = data_attribute.replace("_", " ").title()
         self._state = None
         self._name = hass.data[DOMAIN]["conf"][NAME] + " " + name
         self._id = self._name
@@ -53,6 +55,10 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
         self._attrs = {
             "unit_of_measurement": unit
         }
+        if icon:
+            self._attr_icon = icon
+        if device_class:
+            self._attr_device_class = device_class
 
     @property
     def unique_id(self):

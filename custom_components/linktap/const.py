@@ -8,3 +8,4 @@ GW_IP = "Local IP Address of Gateway"
 NAME = "Friendly Name of Tap"
 DEFAULT_TIME = 900
 DEFAULT_NAME = "Linktap Local Integration"
+PLATFORMS = ['switch', 'binary_sensor', 'sensor', 'number']
