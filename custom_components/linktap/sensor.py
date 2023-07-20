@@ -6,15 +6,11 @@ import aiohttp
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
-from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers.device_registry import DeviceEntryType
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity import *
 from homeassistant.helpers.update_coordinator import (CoordinatorEntity,
                                                       DataUpdateCoordinator)
+from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -51,17 +47,9 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
         self._attrs = {
             "unit_of_measurement": unit
         }
-
-        ha_name = self._name.lower().replace(" ", "_")
-        self._attr_unique_id = f"linktap_local_sensor_{ha_name}"
-        self._attr_device_info = DeviceInfo(
-            entry_type=DeviceEntryType.SERVICE,
-            identifers={
-                (DOMAIN, hass.data[DOMAIN]["conf"][TAP_ID])
-            },
-            name=hass.data[DOMAIN]["conf"][NAME],
-            manufacturer="Linktap"
-        )
+        self.platform = "sensor"
+        self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{data_attribute}_{self.tap_id}")
+        self._attr_device_info = self.coordinator.get_device()
 
     @property
     def unique_id(self):

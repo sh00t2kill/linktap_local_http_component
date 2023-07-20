@@ -65,9 +65,11 @@ class LinktapLocal:
             "cmd": START_CMD,
             "gw_id": gw_id,
             "dev_id": dev_id,
-            "duration": duration
+            "duration": int(float(duration))
         }
+        _LOGGER.debug(f"Data to Turn ON: {data}")
         status = await self._request(data)
+        _LOGGER.debug(f"Response: {status}")
         return status
 
     async def turn_off(self, gw_id, dev_id):

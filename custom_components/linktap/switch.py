@@ -6,19 +6,16 @@ import aiohttp
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.switch import SwitchEntity
-from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
-from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers.device_registry import DeviceEntryType
+from homeassistant.const import STATE_UNKNOWN
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity import *
 from homeassistant.helpers.update_coordinator import (CoordinatorEntity,
                                                       DataUpdateCoordinator)
+from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
 
-from .const import DOMAIN, TAP_ID, GW_ID, NAME
+from .const import DOMAIN, TAP_ID, GW_ID, NAME, DEFAULT_TIME
 
 async def async_setup_platform(
     hass, config, async_add_entities, discovery_info=None
@@ -38,21 +35,18 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
         self.tap_id = hass.data[DOMAIN]["conf"][TAP_ID]
         self.entity_id = DOMAIN + "." + self._id
         self.tap_api = coordinator.tap_api
+        self.platform = "switch"
+        self.hass = hass
+        self._attrs = {}
+        #ha_name = self._name.lower().replace(" ", "_")
+        self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{self.tap_id}")
+        self._attr_device_info = self.coordinator.get_device()
 
-        ha_name = self._name.lower().replace(" ", "_")
-        self._attr_unique_id = f"linktap_local_switch_{ha_name}"
-        self._attr_device_info = DeviceInfo(
-            entry_type=DeviceEntryType.SERVICE,
-            identifers={
-                (DOMAIN, hass.data[DOMAIN]["conf"][TAP_ID])
-            },
-            name=hass.data[DOMAIN]["conf"][NAME],
-            manufacturer="Linktap"
-        )
-        _LOGGER.debug(self._attr_device_info)
+        self.duration_entity = f"number.{DOMAIN}_{self._name}_watering_duration"
 
     @property
     def unique_id(self):
+        _LOGGER.debug(self._attr_device_info)
         return self._attr_unique_id
 
     @property
@@ -60,17 +54,35 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
         return f"Linktap {self._name}"
 
     async def async_turn_on(self, **kwargs):
-        attributes = await self.tap_api.turn_on(self._id, self._gw_id)
+        duration = self.get_watering_duration()
+        attributes = await self.tap_api.turn_on(self._gw_id, self.tap_id, duration)
         await self.coordinator.async_request_refresh()
 
 
     async def async_turn_off(self, **kwargs):
-        attributes = await self.tap_api.turn_off(self._id, self._gw_id)
+        duration = self.get_watering_duration()
+        attributes = await self.tap_api.turn_off(self._gw_id, self.tap_id)
         await self.coordinator.async_request_refresh()
+
+    def get_watering_duration(self):
+        entity = self.hass.states.get(self.duration_entity)
+        if entity.state == STATE_UNKNOWN:
+            duration = DEFAULT_TIME
+        else:
+            duration = entity.state
+        self._attrs['Watering Duration'] = duration
+        return duration
+
+    @property
+    def extra_state_attributes(self):
+        return self._attrs
 
     @property
     def state(self):
         status = self.coordinator.data
+        duration = self.get_watering_duration()
+        _LOGGER.debug(f"Set duration:{duration}")
+        self._attrs["is_watering"] = status["is_watering"]
         state = "unknown"
         if status["is_watering"]:
             state = "on"
