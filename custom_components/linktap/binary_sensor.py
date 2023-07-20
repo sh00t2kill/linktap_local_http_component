@@ -40,12 +40,10 @@ class LinktapBinarySensor(CoordinatorEntity, BinarySensorEntity):
         self._data_check_attribute = data_attribute
         self.tap_id = hass.data[DOMAIN]["conf"][TAP_ID]
         self.tap_name = hass.data[DOMAIN]["conf"][NAME]
-        #self._name = name
-        self._attrs = {}
         self.platform = "binary_sensor"
-
         self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{data_attribute}_{self.tap_id}")
         self._attr_device_info = self.coordinator.get_device()
+        self._attrs = {}
 
     @property
     def unique_id(self):
@@ -55,6 +53,10 @@ class LinktapBinarySensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def name(self):
         return f"Linktap {self._name}"
+
+    @property
+    def extra_state_attributes(self):
+        return self._attrs
 
     @property
     def state(self):

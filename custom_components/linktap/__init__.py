@@ -1,7 +1,9 @@
 import asyncio
+from json.decoder import JSONDecodeError
 import logging
 from datetime import timedelta
-
+import time
+import random
 import async_timeout
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -36,7 +38,16 @@ async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry)-> bool
 
     linker = LinktapLocal()
     linker.set_ip(gw_ip)
-    gw_id = await linker.get_gw_id()
+    try:
+        gw_id = await linker.get_gw_id()
+    except JSONDecodeError:
+        time.sleep(1)
+        try:
+            gw_id = await linker.get_gw_id()
+        except JSONDecodeError:
+            time.sleep(random.randint(1,4))
+            gw_id = await linker.get_gw_id()
+
     _LOGGER.debug(f"Found GW_ID: {gw_id}")
 
     conf = {

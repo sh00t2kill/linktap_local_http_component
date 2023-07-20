@@ -35,7 +35,6 @@ class LinktapFlowHandler(ConfigFlow, domain=DOMAIN):
                 options={
                     GW_IP: user_input[GW_IP],
                     TAP_ID: user_input[TAP_ID],
-                    #GW_ID: user_input[GW_ID],
                     NAME: user_input[NAME],
                 },
             )
@@ -46,7 +45,6 @@ class LinktapFlowHandler(ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required(GW_IP, default="IP of Gateway"): str,
                     vol.Required(TAP_ID, default="ID OF Tap"): str,
-                    #vol.Required(GW_ID, default="ID of Gateway"): str,
                     vol.Required(NAME, default="My Tap Name"): str,
                 }
             ),
@@ -79,10 +77,6 @@ class LinktapOptionFlowHandler(OptionsFlow):
                         TAP_ID,
                         default=self.config_entry.options.get(TAP_ID),
                     ): str,
-                    #vol.Required(
-                    #    GW_ID,
-                    #    default=self.config_entry.options.get(GW_ID),
-                    #): str,
                     vol.Required(
                         NAME,
                         default=self.config_entry.options.get(NAME),

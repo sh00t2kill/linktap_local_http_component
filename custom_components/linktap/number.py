@@ -1,7 +1,7 @@
 import logging
 
-from homeassistant.components.number import NumberEntity, RestoreNumber
-from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.components.number import RestoreNumber
+from homeassistant.const import STATE_UNKNOWN
 from homeassistant.helpers.entity import *
 from homeassistant.helpers.update_coordinator import (CoordinatorEntity,
                                                       DataUpdateCoordinator)
@@ -9,7 +9,7 @@ from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
 
-from .const import DOMAIN, TAP_ID, GW_ID, NAME
+from .const import DOMAIN, TAP_ID, GW_ID, NAME, DEFAULT_TIME
 
 async def async_setup_platform(
     hass, config, async_add_entities, discovery_info=None
@@ -37,11 +37,17 @@ class LinktapNumber(CoordinatorEntity, RestoreNumber):
         self._attr_native_step = 5
         self._attr_native_unit_of_measurement = "m"
 
+        self._attrs = {}
+
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
         restored_number = await self.async_get_last_number_data()
-        _LOGGER.debug(f"Restoring value to {restored_number.native_value}")
-        self._attr_native_value = restored_number.native_value
+        if restored_number is not None and restored_number.native_value != STATE_UNKNOWN:
+            _LOGGER.debug(f"Restoring value to {restored_number.native_value}")
+            self._attr_native_value = restored_number.native_value
+        else:
+            _LOGGER.debug(f"No value found to restore -- setting default")
+            self._attr_native_value = DEFAULT_TIME / 60
         self.async_write_ha_state()
 
     @property
@@ -50,10 +56,15 @@ class LinktapNumber(CoordinatorEntity, RestoreNumber):
         return self._attr_unique_id
 
     @property
+    def extra_state_attributes(self):
+        return self._attrs
+
+    @property
     def name(self):
         return f"Linktap {self._name} Watering Duration"
 
-    def set_native_value(self, value: float) -> None:
+    async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""
         self._attr_native_value = value
         self.async_write_ha_state()
+        await self.coordinator.async_request_refresh()

@@ -32,6 +32,8 @@ async def async_setup_platform(
     sensors.append(LinktapSensor(coordinator, hass, "Volume", "volume", "lpm"))
     sensors.append(LinktapSensor(coordinator, hass, "Volume Limit", "volume_limit", "lpm"))
     sensors.append(LinktapSensor(coordinator, hass, "Failsafe Duration", "failsafe_duration", "s"))
+    sensors.append(LinktapSensor(coordinator, hass, "Plan Mode", "plan_mode", "mode"))
+    sensors.append(LinktapSensor(coordinator, hass, "Plan SN", "plan_sn", "sn"))
     async_add_entities(sensors, True)
 
 class LinktapSensor(CoordinatorEntity, SensorEntity):
@@ -44,12 +46,13 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
         self.attribute = data_attribute
         self.tap_id = hass.data[DOMAIN]["conf"][TAP_ID]
         self.tap_name = hass.data[DOMAIN]["conf"][NAME]
-        self._attrs = {
-            "unit_of_measurement": unit
-        }
+
         self.platform = "sensor"
         self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{data_attribute}_{self.tap_id}")
         self._attr_device_info = self.coordinator.get_device()
+        self._attrs = {
+            "unit_of_measurement": unit
+        }
 
     @property
     def unique_id(self):
