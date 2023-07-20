@@ -26,15 +26,11 @@ PLATFORMS = ['switch', 'binary_sensor', 'sensor']
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry)-> bool:
-    """Set up the platform.
-    @NOTE: `config` is the full dict from `configuration.yaml`.
-    :returns: A boolean to indicate that initialization was successful.
-    """
+    """Set up the platform."""
 
-    tap_id = entry.options[TAP_ID]
-    #gw_id = entry.options[GW_ID]
-    gw_ip = entry.options[GW_IP]
-    name  = entry.options[NAME]
+    tap_id = entry.data.get(TAP_ID)
+    gw_ip = entry.data.get(GW_IP)
+    name = entry.data.get(NAME)
 
     linker = LinktapLocal()
     linker.set_ip(gw_ip)
@@ -86,6 +82,13 @@ async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry)-> bool
     hass.async_create_task(async_load_platform(hass, "switch", DOMAIN, {}, conf))
 
     return True
+
+async def async_unload_entry(hass: core.HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload an NSW Rural Fire Service Fire Danger component config entry."""
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if unload_ok:
+        hass.data[DOMAIN].pop(entry.entry_id)
+    return unload_ok
 
 class LinktapCoordinator(DataUpdateCoordinator):
     def __init__(self, hass, linker, conf):

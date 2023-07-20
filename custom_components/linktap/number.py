@@ -2,6 +2,7 @@ import logging
 
 from homeassistant.components.number import RestoreNumber
 from homeassistant.const import STATE_UNKNOWN
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity import *
 from homeassistant.helpers.update_coordinator import (CoordinatorEntity,
                                                       DataUpdateCoordinator)
@@ -62,6 +63,10 @@ class LinktapNumber(CoordinatorEntity, RestoreNumber):
     @property
     def name(self):
         return f"Linktap {self._name} Watering Duration"
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return self._attr_device_info
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""
