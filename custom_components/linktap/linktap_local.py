@@ -2,8 +2,6 @@ import aiohttp
 import re
 import json
 import logging
-#import time
-#import random
 
 from .const import START_CMD, STATUS_CMD, STOP_CMD, DEFAULT_TIME
 
@@ -43,8 +41,9 @@ class LinktapLocal:
                 response = await resp.text()
         await session.close()
 
+        # Every now and then, a request will throw a 404.
+        # Ive never seen it fail twice, so lets try it again.
         if response.find("404") != -1:
-            #time.sleep(random.randint(1,4))
             _LOGGER.debug("Got a 404 issue: Wait and try again")
             async with aiohttp.ClientSession() as session:
                 async with await session.post(url, json=data, headers=headers) as resp:
@@ -67,7 +66,7 @@ class LinktapLocal:
             "dev_id": dev_id,
         }
         status = await self._request(data)
-        return status
+        return status["ret"] == 0
 
     async def turn_on(self, gw_id, dev_id, seconds):
         if not seconds:
@@ -81,7 +80,7 @@ class LinktapLocal:
         _LOGGER.debug(f"Data to Turn ON: {data}")
         status = await self._request(data)
         _LOGGER.debug(f"Response: {status}")
-        return status
+        return status["ret"] == 0
 
     async def turn_off(self, gw_id, dev_id):
         data = {
@@ -90,8 +89,10 @@ class LinktapLocal:
             "dev_id": dev_id,
         }
         status = await self._request(data)
-        return status
+        return status["ret"] == 0
 
+    """This is potentially a little hacky, as it actually sends a malformatted request to the gateway.
+    The ID of the gateway is returned in this malformed request, so lets use it for good and not evil."""
     async def get_gw_id(self):
         data = {
             "cmd":3
@@ -99,3 +100,23 @@ class LinktapLocal:
         status = await self._request(data)
         return status["gw_id"]
 
+    """alert: type of alert
+    0: all types of alert.
+    1: device fall alert.
+    2: valve shut-down failure alert.
+    3: water cut-off alert.
+    4: unusually high flow alert.
+    5: unusually low flow alert.
+    """
+    async def dismiss_alert(self, gw_id, dev_id, alert_id=False):
+        if not alert_id:
+            alert_id = 0
+        data = {
+            "cmd":10,
+            "gw_id": gw_id,
+            "dev_id": dev_id,
+            "alert": alert_id,
+            "enable": True
+        }
+        status = await self._request(data)
+        return status["ret"] == 0

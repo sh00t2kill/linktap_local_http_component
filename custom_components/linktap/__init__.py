@@ -21,8 +21,6 @@ from homeassistant.helpers.update_coordinator import (DataUpdateCoordinator,
 from .const import DOMAIN, TAP_ID, GW_ID, GW_IP, NAME, PLATFORMS
 from .linktap_local import LinktapLocal
 
-
-
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup(_hass, _config):
@@ -40,11 +38,9 @@ async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry)-> bool
     try:
         gw_id = await linker.get_gw_id()
     except JSONDecodeError:
-        #time.sleep(1)
         try:
             gw_id = await linker.get_gw_id()
         except JSONDecodeError:
-            #time.sleep(random.randint(1,4))
             gw_id = await linker.get_gw_id()
 
     _LOGGER.debug(f"Found GW_ID: {gw_id}")
@@ -58,7 +54,7 @@ async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry)-> bool
 
     coordinator = LinktapCoordinator(hass, linker, conf)
     await coordinator.async_config_entry_first_refresh()
-    #_LOGGER.debug("Coordinator has synced")
+    _LOGGER.debug("Coordinator has synced")
 
     hass.data[DOMAIN] = {
         "conf": conf,
@@ -120,13 +116,4 @@ class LinktapCoordinator(DataUpdateCoordinator):
             model=self.hass.data[DOMAIN]["conf"][TAP_ID],
             configuration_url="http://" + self.hass.data[DOMAIN]["conf"][GW_IP] + "/"
         )
-        #return {
-        #    "identifiers": {
-        #        (DOMAIN, self.hass.data[DOMAIN]["conf"][TAP_ID])
-        #    },
-        #    "name": self.hass.data[DOMAIN]["conf"][NAME],
-        #    "via_device": (DOMAIN, self.hass.data[DOMAIN]["conf"][TAP_ID]),
-        #    "manufacturer": "Linktap",
-        #    "configuration_url": "http://" + self.hass.data[DOMAIN]["conf"][GW_IP] + "/"
-        #}
 
