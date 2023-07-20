@@ -55,12 +55,11 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs):
         duration = self.get_watering_duration()
-        attributes = await self.tap_api.turn_on(self._gw_id, self.tap_id, duration)
+        seconds = int(float(duration)) * 60
+        attributes = await self.tap_api.turn_on(self._gw_id, self.tap_id, seconds)
         await self.coordinator.async_request_refresh()
 
-
     async def async_turn_off(self, **kwargs):
-        duration = self.get_watering_duration()
         attributes = await self.tap_api.turn_off(self._gw_id, self.tap_id)
         await self.coordinator.async_request_refresh()
 

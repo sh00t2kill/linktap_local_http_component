@@ -27,7 +27,6 @@ class LinktapNumber(CoordinatorEntity, RestoreNumber):
         self._name = hass.data[DOMAIN]["conf"][NAME]
         self._id = self._name
         self.tap_id = hass.data[DOMAIN]["conf"][TAP_ID]
-        self.tap_api = coordinator.tap_api
         self.platform = "number"
 
         self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{self.tap_id}")
