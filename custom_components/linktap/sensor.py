@@ -60,10 +60,6 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
         return self._attr_unique_id
 
     @property
-    def unique_id(self):
-        return f"Linktap Sensor {self._name}"
-
-    @property
     def name(self):
         return f"Linktap {self._id}"
 
