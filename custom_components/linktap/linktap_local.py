@@ -120,7 +120,7 @@ class LinktapLocal:
 
     async def get_end_devs(self, gw_id):
         config = await self.get_gw_config(gw_id)
-        return config["end_devs"]
+        return config["end_dev"]
 
     """This is potentially a little hacky, as it actually sends a malformatted request to the gateway.
     The ID of the gateway is returned in this malformed request, so lets use it for good and not evil."""
