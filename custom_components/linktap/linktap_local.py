@@ -1,15 +1,17 @@
 import aiohttp
+import asyncio
 import re
 import json
 import logging
 
-from .const import START_CMD, STATUS_CMD, STOP_CMD, DEFAULT_TIME
+from .const import START_CMD, STATUS_CMD, STOP_CMD, DEFAULT_TIME, CONFIG_CMD, DISMISS_ALERT_CMD
 
 _LOGGER = logging.getLogger(__name__)
 
 class LinktapLocal:
 
     ip = False
+    gw_id = False
 
     def __init__(self):
         # Do nothing
@@ -20,6 +22,12 @@ class LinktapLocal:
 
     def get_ip(self, ip):
         return self.ip
+
+    def set_gw_id(self, gw_id):
+        self.gw_id = gw_id
+
+    def get_gw_id(self):
+        return self.gw_id
 
     def clean_response(self, text):
         """Remove html tags from a string"""
@@ -45,6 +53,7 @@ class LinktapLocal:
         # Ive never seen it fail twice, so lets try it again.
         if response.find("404") != -1:
             _LOGGER.debug("Got a 404 issue: Wait and try again")
+            await asyncio.sleep(1)
             async with aiohttp.ClientSession() as session:
                 async with await session.post(url, json=data, headers=headers) as resp:
                     response = await resp.text()
@@ -91,11 +100,33 @@ class LinktapLocal:
         status = await self._request(data)
         return status["ret"] == 0
 
+    async def get_gw_config(self, gw_id):
+        data = {
+            "cmd": CONFIG_CMD,
+            "gw_id": gw_id
+        }
+        status = await self._request(data)
+        return status
+
+    ## Config helper functions: If multiples of these are going to be used,
+    ## it would make sense to use the config function above and use the output
+    async def get_vol_unit(self, gw_id):
+        config = await self.get_gw_config(gw_id)
+        return config["vol_unit"]
+
+    async def get_version(self, gw_id):
+        config = await self.get_gw_config(gw_id)
+        return config["ver"]
+
+    async def get_end_devs(self, gw_id):
+        config = await self.get_gw_config(gw_id)
+        return config["end_devs"]
+
     """This is potentially a little hacky, as it actually sends a malformatted request to the gateway.
     The ID of the gateway is returned in this malformed request, so lets use it for good and not evil."""
     async def get_gw_id(self):
         data = {
-            "cmd":3
+            "cmd":STATUS_CMD
         }
         status = await self._request(data)
         return status["gw_id"]
@@ -112,7 +143,7 @@ class LinktapLocal:
         if not alert_id:
             alert_id = 0
         data = {
-            "cmd":10,
+            "cmd": DISMISS_ALERT_CMD,
             "gw_id": gw_id,
             "dev_id": dev_id,
             "alert": alert_id,
