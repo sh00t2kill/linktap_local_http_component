@@ -75,7 +75,7 @@ class LinktapLocal:
             "dev_id": dev_id,
         }
         status = await self._request(data)
-        return status["ret"] == 0
+        return status
 
     async def turn_on(self, gw_id, dev_id, seconds):
         if not seconds:
