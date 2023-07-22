@@ -27,8 +27,8 @@ class LinktapFlowHandler(config_entries.ConfigFlow):
 
         new_user_input = {
             vol.Required(GW_IP, default=GW_IP): str,
-            vol.Required(TAP_ID, default=TAP_ID): str,
-            vol.Required(NAME, default=NAME): str,
+            #vol.Required(TAP_ID, default=TAP_ID): str,
+            #vol.Required(NAME, default=NAME): str,
         }
 
         schema = vol.Schema(new_user_input)

@@ -14,7 +14,7 @@ from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
 
-from .const import DOMAIN, TAP_ID, GW_ID, NAME
+from .const import DOMAIN, TAP_ID, GW_ID, NAME, GW_IP
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,34 +24,36 @@ async def async_setup_entry(
 ):
     """Setup the sensor platform."""
     coordinator = hass.data[DOMAIN]["coordinator"]
+    taps = hass.data[DOMAIN]["conf"]["taps"]
     sensors = []
-    sensors.append(LinktapSensor(coordinator, hass, data_attribute="signal", unit="%", icon="mdi:percent-circle"))
-    sensors.append(LinktapSensor(coordinator, hass, data_attribute="battery", unit="%", device_class="battery"))
-    sensors.append(LinktapSensor(coordinator, hass, data_attribute="total_duration", unit="s", icon="mdi:clock"))
-    sensors.append(LinktapSensor(coordinator, hass, data_attribute="remain_duration", unit="s", icon="mdi:clock"))
-    sensors.append(LinktapSensor(coordinator, hass, data_attribute="speed", unit="lpm", icon="mdi:speedometer"))
-    sensors.append(LinktapSensor(coordinator, hass, data_attribute="volume", unit="lpm", icon="mdi:water-percent"))
-    sensors.append(LinktapSensor(coordinator, hass, data_attribute="volume_limit", unit="lpm", icon="mdi:water-percent"))
-    sensors.append(LinktapSensor(coordinator, hass, data_attribute="failsafe_duration", unit="s", icon="mdi:clock"))
-    sensors.append(LinktapSensor(coordinator, hass, data_attribute="plan_mode", unit="mode", icon="mdi:note"))
-    sensors.append(LinktapSensor(coordinator, hass, data_attribute="plan_sn", unit="sn", icon="mdi:note"))
+    for tap in taps:
+        #sensors = []
+        sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="signal", unit="%", icon="mdi:percent-circle"))
+        sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="battery", unit="%", device_class="battery"))
+        sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="total_duration", unit="s", icon="mdi:clock"))
+        sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="remain_duration", unit="s", icon="mdi:clock"))
+        sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="speed", unit="lpm", icon="mdi:speedometer"))
+        sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="volume", unit="lpm", icon="mdi:water-percent"))
+        sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="volume_limit", unit="lpm", icon="mdi:water-percent"))
+        sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="failsafe_duration", unit="s", icon="mdi:clock"))
+        sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="plan_mode", unit="mode", icon="mdi:note"))
+        sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="plan_sn", unit="sn", icon="mdi:note"))
     async_add_entities(sensors, True)
 
 class LinktapSensor(CoordinatorEntity, SensorEntity):
 
-    def __init__(self, coordinator: DataUpdateCoordinator, hass, data_attribute, unit, device_class=False, icon=False):
+    def __init__(self, coordinator: DataUpdateCoordinator, hass, tap, data_attribute, unit, device_class=False, icon=False):
         super().__init__(coordinator)
         name = data_attribute.replace("_", " ").title()
         self._state = None
-        self._name = hass.data[DOMAIN]["conf"][NAME] + " " + name
+        self._name = tap[NAME] + " " + name
         self._id = self._name
         self.attribute = data_attribute
-        self.tap_id = hass.data[DOMAIN]["conf"][TAP_ID]
-        self.tap_name = hass.data[DOMAIN]["conf"][NAME]
+        self.tap_id = tap[TAP_ID]
+        self.tap_name = tap[NAME]
 
         self.platform = "sensor"
         self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{data_attribute}_{self.tap_id}")
-        self._attr_device_info = self.coordinator.get_device()
         self._attrs = {
             "unit_of_measurement": unit
         }
@@ -59,6 +61,16 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
             self._attr_icon = icon
         if device_class:
             self._attr_device_class = device_class
+
+        self._attr_device_info = DeviceInfo(
+            identifiers={
+                (DOMAIN, tap[TAP_ID])
+            },
+            name=tap[NAME],
+            manufacturer="Linktap",
+            model=tap[TAP_ID],
+            configuration_url="http://" + hass.data[DOMAIN]["conf"][GW_IP] + "/"
+        )
 
     @property
     def unique_id(self):

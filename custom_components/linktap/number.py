@@ -10,35 +10,48 @@ from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
 
-from .const import DOMAIN, TAP_ID, GW_ID, NAME, DEFAULT_TIME
+from .const import DOMAIN, TAP_ID, GW_ID, NAME, DEFAULT_TIME, GW_IP
 
 #async def async_setup_platform(
 async def async_setup_entry(
     hass, config, async_add_entities, discovery_info=None
 ):
     """Setup the switch platform."""
+    taps = hass.data[DOMAIN]["conf"]["taps"]
     coordinator = hass.data[DOMAIN]["coordinator"]
-    async_add_entities([LinktapNumber(coordinator, hass)], True)
+    numbers = []
+    for tap in taps:
+        #async_add_entities([LinktapNumber(coordinator, hass, tap)], True)
+        numbers.append(LinktapNumber(coordinator, hass, tap))
+
+    async_add_entities(numbers, True)
 
 
 #class LinktapNumber(CoordinatorEntity, NumberEntity, RestoreNumber):
 class LinktapNumber(CoordinatorEntity, RestoreNumber):
-    def __init__(self, coordinator: DataUpdateCoordinator, hass):
+    def __init__(self, coordinator: DataUpdateCoordinator, hass, tap):
         super().__init__(coordinator)
         self._state = None
-        self._name = hass.data[DOMAIN]["conf"][NAME]
+        self._name = tap[NAME]
         self._id = self._name
-        self.tap_id = hass.data[DOMAIN]["conf"][TAP_ID]
+        self.tap_id = tap[TAP_ID]
         self.platform = "number"
 
         self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{self.tap_id}")
-        self._attr_device_info = self.coordinator.get_device()
-
         self._attr_native_min_value = 0
         self._attr_native_max_value = 120
         self._attr_native_step = 5
         self._attr_native_unit_of_measurement = "m"
         self._attr_icon = "mdi:clock"
+        self._attr_device_info = DeviceInfo(
+            identifiers={
+                (DOMAIN, tap[TAP_ID])
+            },
+            name=tap[NAME],
+            manufacturer="Linktap",
+            model=tap[TAP_ID],
+            configuration_url="http://" + hass.data[DOMAIN]["conf"][GW_IP] + "/"
+        )
 
         self._attrs = {}
 
