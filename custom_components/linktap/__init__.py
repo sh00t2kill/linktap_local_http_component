@@ -2,8 +2,6 @@ import asyncio
 from json.decoder import JSONDecodeError
 import logging
 from datetime import timedelta
-#import time
-#import random
 import async_timeout
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -29,9 +27,7 @@ async def async_setup(_hass, _config):
 async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry)-> bool:
     """Set up the platform."""
 
-    tap_id = entry.data.get(TAP_ID)
     gw_ip = entry.data.get(GW_IP)
-    name = entry.data.get(NAME)
 
     linker = LinktapLocal()
     linker.set_ip(gw_ip)
@@ -45,11 +41,23 @@ async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry)-> bool
 
     _LOGGER.debug(f"Found GW_ID: {gw_id}")
 
+    devices = await linker.get_end_devs(gw_id)
+    _LOGGER.debug(f"Found devices: {devices}")
+    counter = 0
+    tap_list = []
+    for tap_id in devices["devs"]:
+        device_name = devices["names"][counter]
+        tap_list.append({
+            NAME: device_name,
+            TAP_ID: tap_id
+        })
+        counter = counter + 1
+
+    _LOGGER.debug(f"List of Taps: {tap_list}")
     conf = {
         GW_IP: gw_ip,
-        TAP_ID: tap_id,
         GW_ID: gw_id,
-        NAME: name
+        "taps": tap_list,
     }
 
     coordinator = LinktapCoordinator(hass, linker, conf)
@@ -62,6 +70,7 @@ async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry)-> bool
     }
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
 
     return True
 
@@ -90,30 +99,23 @@ class LinktapCoordinator(DataUpdateCoordinator):
         This is the place to pre-process the data to lookup tables
         so entities can quickly look up their data.
         """
-        tap_id = self.conf[TAP_ID]
+
+        #tap_id = self.conf["taps"][TAP_ID]
         gw_id = self.conf[GW_ID]
 
-        try:
-            # Note: asyncio.TimeoutError and aiohttp.ClientError are already
-            # handled by the data update coordinator.
-            async with async_timeout.timeout(10):
-                return await self.tap_api.fetch_data(gw_id, tap_id)
-        except ApiAuthError as err:
-            # Raising ConfigEntryAuthFailed will cancel future updates
-            # and start a config flow with SOURCE_REAUTH (async_step_reauth)
-            raise ConfigEntryAuthFailed from err
-        except ApiError as err:
-            raise UpdateFailed(f"Error communicating with API: {err}")
+        for tap in self.conf["taps"]:
+            tap_id = tap[TAP_ID]
 
-    def get_device(self):
-        return DeviceInfo(
-            #entry_type=DeviceEntryType.SERVICE,
-            identifiers={
-                (DOMAIN, self.hass.data[DOMAIN]["conf"][TAP_ID])
-            },
-            name=self.hass.data[DOMAIN]["conf"][NAME],
-            manufacturer="Linktap",
-            model=self.hass.data[DOMAIN]["conf"][TAP_ID],
-            configuration_url="http://" + self.hass.data[DOMAIN]["conf"][GW_IP] + "/"
-        )
+            try:
+                # Note: asyncio.TimeoutError and aiohttp.ClientError are already
+                # handled by the data update coordinator.
+                async with async_timeout.timeout(10):
+                    return await self.tap_api.fetch_data(gw_id, tap_id)
+            except ApiAuthError as err:
+                # Raising ConfigEntryAuthFailed will cancel future updates
+                # and start a config flow with SOURCE_REAUTH (async_step_reauth)
+                raise ConfigEntryAuthFailed from err
+            except ApiError as err:
+                raise UpdateFailed(f"Error communicating with API: {err}")
+
 

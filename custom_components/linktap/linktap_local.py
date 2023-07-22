@@ -44,6 +44,7 @@ class LinktapLocal:
         }
 
         url = "http://" + self.ip + "/api.shtml"
+        _LOGGER.debug(f"Request to {url}")
         async with aiohttp.ClientSession() as session:
             async with await session.post(url, json=data, headers=headers) as resp:
                 response = await resp.text()
@@ -120,7 +121,10 @@ class LinktapLocal:
 
     async def get_end_devs(self, gw_id):
         config = await self.get_gw_config(gw_id)
-        return config["end_dev"]
+        return {
+            "devs": config["end_dev"],
+            "names": config["dev_name"],
+        }
 
     """This is potentially a little hacky, as it actually sends a malformatted request to the gateway.
     The ID of the gateway is returned in this malformed request, so lets use it for good and not evil."""
