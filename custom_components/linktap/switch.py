@@ -18,15 +18,15 @@ _LOGGER = logging.getLogger(__name__)
 
 from .const import DOMAIN, TAP_ID, GW_ID, NAME, DEFAULT_TIME, GW_IP
 
-#async def async_setup_platform(
 async def async_setup_entry(
     hass, config, async_add_entities, discovery_info=None
 ):
     """Setup the switch platform."""
-    coordinator = hass.data[DOMAIN]["coordinator"]
     taps = hass.data[DOMAIN]["conf"]["taps"]
     switches = []
     for tap in taps:
+        coordinator = tap["coordinator"]
+        _LOGGER.debug(f"Configuring switch for tap {tap}")
         switches.append(LinktapSwitch(coordinator, hass, tap))
     async_add_entities(switches, True)
 
@@ -34,7 +34,7 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
     def __init__(self, coordinator: DataUpdateCoordinator, hass, tap):
         super().__init__(coordinator)
         self._state = None
-        self._name = tap[NAME]#hass.data[DOMAIN]["conf"][NAME]
+        self._name = tap[NAME]
         self._id = tap[TAP_ID]
         self._gw_id = hass.data[DOMAIN]["conf"][GW_ID]
         self.tap_id = tap[TAP_ID]
@@ -104,6 +104,7 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
     @property
     def state(self):
         status = self.coordinator.data
+        _LOGGER.debug(f"Switch Status: {status}")
         duration = self.get_watering_duration()
         _LOGGER.debug(f"Set duration:{duration}")
         self._attrs["is_watering"] = status["is_watering"]

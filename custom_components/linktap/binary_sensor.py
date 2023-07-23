@@ -21,11 +21,11 @@ async def async_setup_entry(
     hass, config, async_add_entities, discovery_info=None
 ):
     """Setup the sensor platform."""
-    coordinator = hass.data[DOMAIN]["coordinator"]
     taps = hass.data[DOMAIN]["conf"]["taps"]
     binary_sensors = []
     for tap in taps:
-        #binary_sensors = []
+        coordinator = tap["coordinator"]
+        _LOGGER.debug(f"Configuring binary sensors for tap {tap}")
         binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, name="Is Linked", data_attribute="is_rf_linked"))
         binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, data_attribute="is_fall", icon="mdi:meter-electric-outline"))
         binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, data_attribute="is_cutoff", icon="mdi:scissors-cutting"))

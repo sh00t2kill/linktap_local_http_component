@@ -3,6 +3,7 @@ import asyncio
 import re
 import json
 import logging
+import random
 
 from .const import START_CMD, STATUS_CMD, STOP_CMD, DEFAULT_TIME, CONFIG_CMD, DISMISS_ALERT_CMD
 
@@ -44,7 +45,6 @@ class LinktapLocal:
         }
 
         url = "http://" + self.ip + "/api.shtml"
-        _LOGGER.debug(f"Request to {url}")
         async with aiohttp.ClientSession() as session:
             async with await session.post(url, json=data, headers=headers) as resp:
                 response = await resp.text()
@@ -54,15 +54,13 @@ class LinktapLocal:
         # Ive never seen it fail twice, so lets try it again.
         if response.find("404") != -1:
             _LOGGER.debug("Got a 404 issue: Wait and try again")
-            await asyncio.sleep(1)
+            await asyncio.sleep(random.randint(1,3))
             async with aiohttp.ClientSession() as session:
                 async with await session.post(url, json=data, headers=headers) as resp:
                     response = await resp.text()
             await session.close()
 
-        _LOGGER.debug(f"Response: {response}")
         clean_resp = self.clean_response(response)
-        _LOGGER.debug(f"Stripped Response: {clean_resp}")
         return json.loads(clean_resp)
 
     async def fetch_data(self, gw_id, dev_id):

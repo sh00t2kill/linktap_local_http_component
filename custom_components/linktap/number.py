@@ -18,10 +18,11 @@ async def async_setup_entry(
 ):
     """Setup the switch platform."""
     taps = hass.data[DOMAIN]["conf"]["taps"]
-    coordinator = hass.data[DOMAIN]["coordinator"]
     numbers = []
     for tap in taps:
         #async_add_entities([LinktapNumber(coordinator, hass, tap)], True)
+        _LOGGER.debug(f"Configuring numbers for tap {tap}")
+        coordinator = coordinator = tap["coordinator"]
         numbers.append(LinktapNumber(coordinator, hass, tap))
 
     async_add_entities(numbers, True)
@@ -36,7 +37,6 @@ class LinktapNumber(CoordinatorEntity, RestoreNumber):
         self._id = self._name
         self.tap_id = tap[TAP_ID]
         self.platform = "number"
-
         self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{self.tap_id}")
         self._attr_native_min_value = 0
         self._attr_native_max_value = 120
