@@ -76,8 +76,8 @@ class LinktapLocal:
         status = await self._request(data)
         return status
 
-    async def turn_on(self, gw_id, dev_id, seconds):
-        if not seconds:
+    async def turn_on(self, gw_id, dev_id, seconds=None, volume=None):
+        if (not seconds or seconds == 0) and not volume:
             seconds = DEFAULT_TIME
         data = {
             "cmd": START_CMD,
@@ -85,6 +85,8 @@ class LinktapLocal:
             "dev_id": dev_id,
             "duration": int(float(seconds))
         }
+        if volume and volume != 0:
+            data["volume"] = volume
         _LOGGER.debug(f"Data to Turn ON: {data}")
         status = await self._request(data)
         _LOGGER.debug(f"Response: {status}")
