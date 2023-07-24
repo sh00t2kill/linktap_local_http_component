@@ -6,6 +6,7 @@ import aiohttp
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.helpers import entity_platform, service
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity import *
 from homeassistant.helpers.update_coordinator import (CoordinatorEntity,
@@ -33,6 +34,10 @@ async def async_setup_entry(
         binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, data_attribute="is_broken", icon="mdi:scissors-cutting"))
     async_add_entities(binary_sensors, True)
 
+    platform = entity_platform.async_get_current_platform()
+    platform.async_register_entity_service("dismiss_alerts", {}, "_dismiss_alerts")
+    platform.async_register_entity_service("dismiss_alert", {}, "_dismiss_alert")
+
 class LinktapBinarySensor(CoordinatorEntity, BinarySensorEntity):
 
     def __init__(self, coordinator: DataUpdateCoordinator, hass, tap, data_attribute, name=False, device_class=False, icon=False):
@@ -40,11 +45,13 @@ class LinktapBinarySensor(CoordinatorEntity, BinarySensorEntity):
         self._state = None
         if not name:
             name = data_attribute.replace("_", " ").title()
+        self.gw_id = hass.data[DOMAIN]["conf"][GW_ID]
         self._name = tap[NAME] + " " + name
         self._id = self._name
         self._data_check_attribute = data_attribute
         self.tap_id = tap[TAP_ID]
         self.tap_name = tap[NAME]
+        self.tap_api = coordinator.tap_api
         self.platform = "binary_sensor"
         self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{data_attribute}_{self.tap_id}")
         if device_class:
@@ -86,3 +93,41 @@ class LinktapBinarySensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def device_info(self) -> DeviceInfo:
         return self._attr_device_info
+
+    async def _dismiss_alerts(self):
+        _LOGGER.debug(f"Dismissing all alerts for {self.entity_id}")
+        await self.tap_api.dismiss_alert(self.gw_id, self.tap_id)
+
+    """alert: type of alert
+    0: all types of alert.
+    1: device fall alert.
+    2: valve shut-down failure alert.
+    3: water cut-off alert.
+    4: unusually high flow alert.
+    5: unusually low flow alert.
+    """
+    async def _dismiss_alert(self):
+        split_name = self.entity_id.split("_")
+        alert_type = split_name[len(split_name)-1]
+        alert_id = self.alert_lookup(alert_type)
+        if alert_id is not None:
+            _LOGGER.debug(f"Dismissing {alert_type} alert for {self.entity_id}")
+            await self.tap_api.dismiss_alert(self.gw_id, self.tap_id)
+        else:
+            _LOGGER.debug("No matching alert found. Do nothing")
+
+    def alert_lookup(self, alert_name):
+        alerts = {
+            "all" :0,
+            "fall": 1,
+            "shutdown" :2,
+            "cutoff": 3,
+            "high_flow": 4,
+            "low_flow": 5
+        }
+        if alert_name in alerts:
+            return alerts[alert_name]
+        else:
+            return None
+
+
