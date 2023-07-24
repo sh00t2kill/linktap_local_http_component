@@ -16,7 +16,7 @@ from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
 
-from .const import DOMAIN, TAP_ID, GW_ID, NAME, DEFAULT_TIME, GW_IP
+from .const import DOMAIN, TAP_ID, GW_ID, NAME, DEFAULT_TIME, GW_IP, ATTR_TIME, ATTR_DURATION, ATTR_STATE, MANUFACTURER
 
 async def async_setup_entry(
     hass, config, async_add_entities, discovery_info=None
@@ -52,11 +52,10 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
                 (DOMAIN, tap[TAP_ID])
             },
             name=tap[NAME],
-            manufacturer="Linktap",
+            manufacturer=MANUFACTURER,
             model=tap[TAP_ID],
             configuration_url="http://" + hass.data[DOMAIN]["conf"][GW_IP] + "/"
         )
-        #self.duration_entity = f"number.{DOMAIN}_{self._name}_watering_duration"
 
     @property
     def unique_id(self):
@@ -64,7 +63,7 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
 
     @property
     def name(self):
-        return f"Linktap {self._name}"
+        return f"{MANUFACTURER} {self._name}"
 
     @property
     def duration_entity(self):
@@ -86,15 +85,15 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
         if not entity:
             _LOGGER.debug(f"Entity {self.duration_entity} not found -- setting default")
             duration = DEFAULT_TIME
-            self._attrs['Default Time'] = True
+            self._attrs[ATTR_TIME] = True
         elif entity.state == STATE_UNKNOWN:
             _LOGGER.debug(f"Entity {self.duration_entity} state unknown -- setting default")
             duration = DEFAULT_TIME
-            self._attrs['Default Time'] = True
+            self._attrs[ATTR_TIME] = True
         else:
             duration = entity.state
-            self._attrs['Default Time'] = False
-        self._attrs['Watering Duration'] = duration
+            self._attrs[ATTR_TIME] = False
+        self._attrs[ATTR_DURATION] = duration
         return duration
 
     @property
@@ -107,12 +106,14 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
         _LOGGER.debug(f"Switch Status: {status}")
         duration = self.get_watering_duration()
         _LOGGER.debug(f"Set duration:{duration}")
-        self._attrs["is_watering"] = status["is_watering"]
+        self._attrs[ATTR_STATE] = status[ATTR_STATE]
+        self._attrs["data"] = status
         state = "unknown"
-        if status["is_watering"]:
+        if status[ATTR_STATE]:
             state = "on"
-        elif not status["is_watering"]:
+        elif not status[ATTR_STATE]:
             state = "off"
+            _LOGGER.debug(f"Switch {self.name} state {state}")
         return state
 
     @property

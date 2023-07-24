@@ -14,7 +14,7 @@ from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
 
-from .const import DOMAIN, TAP_ID, GW_ID, NAME, GW_IP
+from .const import DOMAIN, TAP_ID, GW_ID, NAME, GW_IP, MANUFACTURER
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -67,7 +67,7 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
                 (DOMAIN, tap[TAP_ID])
             },
             name=tap[NAME],
-            manufacturer="Linktap",
+            manufacturer=MANUFACTURER,
             model=tap[TAP_ID],
             configuration_url="http://" + hass.data[DOMAIN]["conf"][GW_IP] + "/"
         )
@@ -79,7 +79,7 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def name(self):
-        return f"Linktap {self._id}"
+        return f"{MANUFACTURER} {self._id}"
 
     @property
     def extra_state_attributes(self):

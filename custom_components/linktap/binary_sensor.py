@@ -14,9 +14,8 @@ from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
 
-from .const import DOMAIN, TAP_ID, GW_ID, NAME, GW_IP
+from .const import DOMAIN, TAP_ID, GW_ID, NAME, GW_IP, MANUFACTURER
 
-#async def async_setup_platform(
 async def async_setup_entry(
     hass, config, async_add_entities, discovery_info=None
 ):
@@ -59,7 +58,7 @@ class LinktapBinarySensor(CoordinatorEntity, BinarySensorEntity):
                 (DOMAIN, tap[TAP_ID])
             },
             name=tap[NAME],
-            manufacturer="Linktap",
+            manufacturer=MANUFACTURER,
             model=tap[TAP_ID],
             configuration_url="http://" + hass.data[DOMAIN]["conf"][GW_IP] + "/"
         )
@@ -71,7 +70,7 @@ class LinktapBinarySensor(CoordinatorEntity, BinarySensorEntity):
 
     @property
     def name(self):
-        return f"Linktap {self._name}"
+        return f"{MANUFACTURER} {self._name}"
 
     @property
     def extra_state_attributes(self):

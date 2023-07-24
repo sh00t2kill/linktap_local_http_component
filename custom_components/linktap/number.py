@@ -10,7 +10,7 @@ from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
 
-from .const import DOMAIN, TAP_ID, GW_ID, NAME, DEFAULT_TIME, GW_IP
+from .const import DOMAIN, TAP_ID, GW_ID, NAME, DEFAULT_TIME, GW_IP, MANUFACTURER
 
 #async def async_setup_platform(
 async def async_setup_entry(
@@ -48,7 +48,7 @@ class LinktapNumber(CoordinatorEntity, RestoreNumber):
                 (DOMAIN, tap[TAP_ID])
             },
             name=tap[NAME],
-            manufacturer="Linktap",
+            manufacturer=MANUFACTURER,
             model=tap[TAP_ID],
             configuration_url="http://" + hass.data[DOMAIN]["conf"][GW_IP] + "/"
         )
@@ -76,7 +76,7 @@ class LinktapNumber(CoordinatorEntity, RestoreNumber):
 
     @property
     def name(self):
-        return f"Linktap {self._name} Watering Duration"
+        return f"{MANUFACTURER} {self._name} Watering Duration"
 
     @property
     def device_info(self) -> DeviceInfo:
