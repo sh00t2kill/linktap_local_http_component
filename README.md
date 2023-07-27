@@ -54,3 +54,7 @@ If both duration AND volume > 0, both duration AND volume are used, and tap will
 
 switch:<br/>
 The tap/valve itself.
+
+
+
+As yet there is no support for controlling scheduling. The API does have support for this, but unless there is demand for it, this is likely more clunky to manage in Home Assistant than the native app.
