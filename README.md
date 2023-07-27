@@ -49,5 +49,7 @@ If duration is 0 AND volume is >0, water by volume is used<br/>
 If duration > 0 AND volume is 0, water by duration is used<br/>
 If both duration AND volume > 0, both duration AND volume are used, and tap will turn off when either is reached<br/>
 
+<p><strong>NOTE: WATER BY VOLUME IS CURRENTLY PENDING A NEW RELEASE FROM LINKTAP.</strong> Until this is released, the volume parameter will have no effect.</p>
+
 switch:<br/>
 The tap/valve itself.
