@@ -2,10 +2,11 @@
 from __future__ import annotations
 
 import logging
+
 import voluptuous as vol
 from homeassistant import config_entries
 
-from .const import DOMAIN, TAP_ID, GW_ID, GW_IP, NAME, DEFAULT_NAME
+from .const import DEFAULT_NAME, DOMAIN, GW_ID, GW_IP, NAME, TAP_ID
 
 _LOGGER = logging.getLogger(__name__)
 
