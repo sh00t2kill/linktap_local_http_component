@@ -41,6 +41,7 @@ number:
 <ul>
 <li>Watering Duration</li>
 <li>Watering Volume</li>
+</ul>
 
 These control the watering time and volume, when the switch for a tap is turned on.<br/>
 If duration is 0 AND volume is 0, default time is applied (currently 15 mins)<br/>
