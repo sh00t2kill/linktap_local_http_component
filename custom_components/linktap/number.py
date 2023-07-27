@@ -2,8 +2,8 @@ import logging
 
 from homeassistant.components.number import RestoreNumber
 from homeassistant.const import STATE_UNKNOWN
-from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity import *
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import (CoordinatorEntity,
                                                       DataUpdateCoordinator)
 from homeassistant.util import slugify
@@ -12,7 +12,6 @@ _LOGGER = logging.getLogger(__name__)
 
 from .const import DOMAIN, TAP_ID, GW_ID, NAME, DEFAULT_TIME, GW_IP
 
-#async def async_setup_platform(
 async def async_setup_entry(
     hass, config, async_add_entities, discovery_info=None
 ):
