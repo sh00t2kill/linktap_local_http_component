@@ -12,6 +12,7 @@ _LOGGER = logging.getLogger(__name__)
 
 from .const import DEFAULT_TIME, DOMAIN, GW_ID, GW_IP, NAME, TAP_ID
 
+
 async def async_setup_entry(
     hass, config, async_add_entities, discovery_info=None
 ):
