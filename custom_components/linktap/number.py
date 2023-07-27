@@ -10,7 +10,7 @@ from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
 
-from .const import DOMAIN, TAP_ID, GW_ID, NAME, DEFAULT_TIME, GW_IP
+from .const import DEFAULT_TIME, DOMAIN, GW_ID, GW_IP, NAME, TAP_ID
 
 async def async_setup_entry(
     hass, config, async_add_entities, discovery_info=None

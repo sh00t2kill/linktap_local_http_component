@@ -6,15 +6,15 @@ import aiohttp
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity import *
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import (CoordinatorEntity,
                                                       DataUpdateCoordinator)
 from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
 
-from .const import DOMAIN, TAP_ID, GW_ID, NAME, GW_IP
+from .const import DOMAIN, GW_ID, GW_IP, NAME, TAP_ID
 
 _LOGGER = logging.getLogger(__name__)
 
