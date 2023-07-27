@@ -39,9 +39,10 @@ sensors:
 
 number:
 <ul>
-<li>Watering Duration</li>
-<li>Watering Volume</li>
+<li>Watering Duration (Defaults to 15 minutes)</li>
+<li>Watering Volume (Defaults to 0)</li>
 </ul>
+<p><strong>Note:</strong>The volume unit is pulled from the gatway. It can either be in L or Gal.</p>
 
 These control the watering time and volume, when the switch for a tap is turned on.<br/>
 If duration is 0 AND volume is 0, default time is applied (currently 15 mins)<br/>
