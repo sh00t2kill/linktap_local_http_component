@@ -2,6 +2,7 @@ import aiohttp
 import asyncio
 import re
 import json
+from json.decoder import JSONDecodeError
 import logging
 import random
 
@@ -45,23 +46,26 @@ class LinktapLocal:
         }
 
         url = "http://" + self.ip + "/api.shtml"
-        async with aiohttp.ClientSession() as session:
-            async with await session.post(url, json=data, headers=headers) as resp:
-                response = await resp.text()
-        await session.close()
-
+        response = await self._make_request(url, data, headers)
         # Every now and then, a request will throw a 404.
         # Ive never seen it fail twice, so lets try it again.
         if response.find("404") != -1:
             _LOGGER.debug("Got a 404 issue: Wait and try again")
             await asyncio.sleep(random.randint(1,3))
-            async with aiohttp.ClientSession() as session:
+            response = await self._make_request(url, data, headers)
+        try:
+            jsonresp = json.loads(self.clean_response(response))
+        except JSONDecodeError:
+            response = await self._make_request(url, data, headers)
+            jsonresp = json.loads(self.clean_response(response))
+        return jsonresp
+
+    async def _make_request(self, url, data, headers):
+        async with aiohttp.ClientSession() as session:
                 async with await session.post(url, json=data, headers=headers) as resp:
                     response = await resp.text()
-            await session.close()
-
-        clean_resp = self.clean_response(response)
-        return json.loads(clean_resp)
+        await session.close()
+        return response
 
     async def fetch_data(self, gw_id, dev_id):
         status = await self.get_tap_status(gw_id, dev_id)

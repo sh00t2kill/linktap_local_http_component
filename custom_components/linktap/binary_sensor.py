@@ -107,7 +107,7 @@ class LinktapBinarySensor(CoordinatorEntity, BinarySensorEntity):
     5: unusually low flow alert.
     """
     async def _dismiss_alert(self):
-        split_name = self.entity_id.split("_")
+        split_name = self._data_check_attribute.split("_")
         alert_type = split_name[len(split_name)-1]
         alert_id = self.alert_lookup(alert_type)
         if alert_id is not None:
