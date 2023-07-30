@@ -6,8 +6,8 @@ import aiohttp
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.binary_sensor import BinarySensorEntity
-from homeassistant.helpers.entity import *
 from homeassistant.helpers import entity_platform, service
+from homeassistant.helpers.entity import *
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import (CoordinatorEntity,
                                                       DataUpdateCoordinator)

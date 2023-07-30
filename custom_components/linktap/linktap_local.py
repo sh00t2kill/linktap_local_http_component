@@ -1,8 +1,9 @@
 import asyncio
 import json
-from json.decoder import JSONDecodeError
 import random
 import re
+from json.decoder import JSONDecodeError
+
 import aiohttp
 
 from .const import (CONFIG_CMD, DEFAULT_TIME, DISMISS_ALERT_CMD, START_CMD,
