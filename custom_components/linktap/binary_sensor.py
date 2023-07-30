@@ -6,16 +6,17 @@ import aiohttp
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.helpers.entity import *
 from homeassistant.helpers import entity_platform, service
 from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers.entity import *
 from homeassistant.helpers.update_coordinator import (CoordinatorEntity,
                                                       DataUpdateCoordinator)
 from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
 
-from .const import DOMAIN, TAP_ID, GW_ID, NAME, GW_IP, MANUFACTURER
+from .const import DOMAIN, GW_ID, GW_IP, MANUFACTURER, NAME, TAP_ID
+
 
 async def async_setup_entry(
     hass, config, async_add_entities, discovery_info=None
@@ -129,5 +130,3 @@ class LinktapBinarySensor(CoordinatorEntity, BinarySensorEntity):
             return alerts[alert_name]
         else:
             return None
-
-

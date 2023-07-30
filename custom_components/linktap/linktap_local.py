@@ -1,12 +1,12 @@
-import aiohttp
 import asyncio
-import re
 import json
 from json.decoder import JSONDecodeError
-import logging
 import random
+import re
+import aiohttp
 
-from .const import START_CMD, STATUS_CMD, STOP_CMD, DEFAULT_TIME, CONFIG_CMD, DISMISS_ALERT_CMD
+from .const import (CONFIG_CMD, DEFAULT_TIME, DISMISS_ALERT_CMD, START_CMD,
+                    STATUS_CMD, STOP_CMD)
 
 _LOGGER = logging.getLogger(__name__)
 

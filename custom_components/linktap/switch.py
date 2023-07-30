@@ -7,16 +7,17 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.const import STATE_UNKNOWN
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity import *
+from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import (CoordinatorEntity,
                                                       DataUpdateCoordinator)
 from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
 
-from .const import DOMAIN, TAP_ID, GW_ID, NAME, DEFAULT_TIME, DEFAULT_VOL, GW_IP, ATTR_VOL, ATTR_VOLUME, ATTR_DEFAULT_TIME, ATTR_DURATION, ATTR_STATE, MANUFACTURER
+from .const import ATTR_DEFAULT_TIME, ATTR_DURATION, ATTR_STATE, ATTR_VOL, ATTR_VOLUME, DEFAULT_TIME, DEFAULT_VOL, DOMAIN, GW_ID, GW_IP, MANUFACTURER, NAME, TAP_ID
+
 
 async def async_setup_entry(
     hass, config, async_add_entities, discovery_info=None

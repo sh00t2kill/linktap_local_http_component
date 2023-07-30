@@ -1,12 +1,12 @@
 {
+    "domain": "linktap",
+    "name": "Local HTTP API for Linktap",
     "codeowners": ["@sh00t2kill"],
     "config_flow": true,
     "dependencies": [],
     "documentation": "https://github.com/sh00t2kill/linktap_local_http_component",
-    "domain": "linktap",
     "iot_class": "local_push",
     "issue_tracker": "https://github.com/sh00t2kill/linktap_local_http_component",
-    "name": "Local HTTP API for Linktap",
     "requirements": [],
-    "version": "0.0.1"
+    "version": "0.1.0"
   }

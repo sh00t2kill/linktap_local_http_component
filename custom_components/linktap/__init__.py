@@ -1,7 +1,8 @@
 import asyncio
-from json.decoder import JSONDecodeError
 import logging
 from datetime import timedelta
+from json.decoder import JSONDecodeError
+
 import async_timeout
 import random
 import homeassistant.helpers.config_validation as cv
@@ -11,13 +12,13 @@ from homeassistant import core
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.helpers.device_registry import DeviceEntryType
+from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import (DataUpdateCoordinator,
                                                       UpdateFailed)
 
-from .const import DOMAIN, TAP_ID, GW_ID, GW_IP, NAME, PLATFORMS
+from .const import DOMAIN, GW_ID, GW_IP, NAME, PLATFORMS, TAP_ID
 from .linktap_local import LinktapLocal
 
 _LOGGER = logging.getLogger(__name__)
@@ -120,9 +121,6 @@ class LinktapCoordinator(DataUpdateCoordinator):
         #tap_id = self.conf["taps"][TAP_ID]
         gw_id = self.conf[GW_ID]
 
-        #for tap in self.conf["taps"]:
-        #    tap_id = tap[TAP_ID]
-
         try:
             # Note: asyncio.TimeoutError and aiohttp.ClientError are already
             # handled by the data update coordinator.
@@ -137,5 +135,3 @@ class LinktapCoordinator(DataUpdateCoordinator):
         #    raise ConfigEntryAuthFailed from err
         #except ApiError as err:
         #    raise UpdateFailed(f"Error communicating with API: {err}")
-
-
