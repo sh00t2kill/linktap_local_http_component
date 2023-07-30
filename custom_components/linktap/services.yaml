@@ -14,4 +14,3 @@ dismiss_alerts:
     entity:
       integration: linktap
       domain: binary_sensor
-
