@@ -1,7 +1,9 @@
 import asyncio
 import json
 import logging
+import random
 import re
+from json.decoder import JSONDecodeError
 
 import aiohttp
 
@@ -46,26 +48,26 @@ class LinktapLocal:
         }
 
         url = "http://" + self.ip + "/api.shtml"
-        _LOGGER.debug(f"Request to {url}")
-        async with aiohttp.ClientSession() as session:
-            async with await session.post(url, json=data, headers=headers) as resp:
-                response = await resp.text()
-        await session.close()
-
+        response = await self._make_request(url, data, headers)
         # Every now and then, a request will throw a 404.
         # Ive never seen it fail twice, so lets try it again.
         if response.find("404") != -1:
             _LOGGER.debug("Got a 404 issue: Wait and try again")
-            await asyncio.sleep(1)
-            async with aiohttp.ClientSession() as session:
+            await asyncio.sleep(random.randint(1,3))
+            response = await self._make_request(url, data, headers)
+        try:
+            jsonresp = json.loads(self.clean_response(response))
+        except JSONDecodeError:
+            response = await self._make_request(url, data, headers)
+            jsonresp = json.loads(self.clean_response(response))
+        return jsonresp
+
+    async def _make_request(self, url, data, headers):
+        async with aiohttp.ClientSession() as session:
                 async with await session.post(url, json=data, headers=headers) as resp:
                     response = await resp.text()
-            await session.close()
-
-        _LOGGER.debug(f"Response: {response}")
-        clean_resp = self.clean_response(response)
-        _LOGGER.debug(f"Stripped Response: {clean_resp}")
-        return json.loads(clean_resp)
+        await session.close()
+        return response
 
     async def fetch_data(self, gw_id, dev_id):
         status = await self.get_tap_status(gw_id, dev_id)
@@ -80,8 +82,8 @@ class LinktapLocal:
         status = await self._request(data)
         return status
 
-    async def turn_on(self, gw_id, dev_id, seconds):
-        if not seconds:
+    async def turn_on(self, gw_id, dev_id, seconds=None, volume=None):
+        if (not seconds or seconds == 0) and not volume:
             seconds = DEFAULT_TIME
         data = {
             "cmd": START_CMD,
@@ -89,6 +91,8 @@ class LinktapLocal:
             "dev_id": dev_id,
             "duration": int(float(seconds))
         }
+        if volume and volume != 0:
+            data["volume"] = volume
         _LOGGER.debug(f"Data to Turn ON: {data}")
         status = await self._request(data)
         _LOGGER.debug(f"Response: {status}")

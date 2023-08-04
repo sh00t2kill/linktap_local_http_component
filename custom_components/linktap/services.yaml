@@ -1,0 +1,16 @@
+#Service ID
+dismiss_alert:
+  name: Dismiss alert
+  description: Dismiss an alert
+  target:
+    entity:
+      integration: lintkap
+      domain: binary_sensor
+
+dismiss_alerts:
+  name: Reset Motor
+  description: Dismiss all alerts
+  target:
+    entity:
+      integration: linktap
+      domain: binary_sensor

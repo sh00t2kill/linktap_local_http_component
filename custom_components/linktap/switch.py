@@ -16,17 +16,20 @@ from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
 
-from .const import DEFAULT_TIME, DOMAIN, GW_ID, GW_IP, NAME, TAP_ID
+from .const import (ATTR_DEFAULT_TIME, ATTR_DURATION, ATTR_STATE, ATTR_VOL,
+                    ATTR_VOLUME, DEFAULT_TIME, DEFAULT_VOL, DOMAIN, GW_ID,
+                    GW_IP, MANUFACTURER, NAME, TAP_ID)
 
 
 async def async_setup_entry(
     hass, config, async_add_entities, discovery_info=None
 ):
     """Setup the switch platform."""
-    coordinator = hass.data[DOMAIN]["coordinator"]
     taps = hass.data[DOMAIN]["conf"]["taps"]
     switches = []
     for tap in taps:
+        coordinator = tap["coordinator"]
+        _LOGGER.debug(f"Configuring switch for tap {tap}")
         switches.append(LinktapSwitch(coordinator, hass, tap))
     async_add_entities(switches, True)
 
@@ -34,7 +37,7 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
     def __init__(self, coordinator: DataUpdateCoordinator, hass, tap):
         super().__init__(coordinator)
         self._state = None
-        self._name = tap[NAME]#hass.data[DOMAIN]["conf"][NAME]
+        self._name = tap[NAME]
         self._id = tap[TAP_ID]
         self._gw_id = hass.data[DOMAIN]["conf"][GW_ID]
         self.tap_id = tap[TAP_ID]
@@ -45,18 +48,18 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
         self._attr_icon = "mdi:water-pump"
         self._attrs = {
             "data": self.coordinator.data,
-            "duration_entity": self.duration_entity
+            "duration_entity": self.duration_entity,
+            "volume_entity": self.volume_entity
         }
         self._attr_device_info = DeviceInfo(
             identifiers={
                 (DOMAIN, tap[TAP_ID])
             },
             name=tap[NAME],
-            manufacturer="Linktap",
+            manufacturer=MANUFACTURER,
             model=tap[TAP_ID],
             configuration_url="http://" + hass.data[DOMAIN]["conf"][GW_IP] + "/"
         )
-        #self.duration_entity = f"number.{DOMAIN}_{self._name}_watering_duration"
 
     @property
     def unique_id(self):
@@ -64,17 +67,26 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
 
     @property
     def name(self):
-        return f"Linktap {self._name}"
+        return f"{MANUFACTURER} {self._name}"
 
     @property
     def duration_entity(self):
         name = self._name.replace(" ", "_")
         return f"number.{DOMAIN}_{name}_watering_duration".lower()
 
+    @property
+    def volume_entity(self):
+        name = self._name.replace(" ", "_")
+        return f"number.{DOMAIN}_{name}_watering_volume".lower()
+
     async def async_turn_on(self, **kwargs):
         duration = self.get_watering_duration()
         seconds = int(float(duration)) * 60
-        attributes = await self.tap_api.turn_on(self._gw_id, self.tap_id, seconds)
+        #volume = self.get_watering_volume()
+        #watering_volume = None
+        #if volume != DEFAULT_VOL:
+        #    watering_volume = volume
+        attributes = await self.tap_api.turn_on(self._gw_id, self.tap_id, seconds, self.get_watering_volume())
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs):
@@ -86,16 +98,36 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
         if not entity:
             _LOGGER.debug(f"Entity {self.duration_entity} not found -- setting default")
             duration = DEFAULT_TIME
-            self._attrs['Default Time'] = True
+            self._attrs[ATTR_DEFAULT_TIME] = True
         elif entity.state == STATE_UNKNOWN:
             _LOGGER.debug(f"Entity {self.duration_entity} state unknown -- setting default")
             duration = DEFAULT_TIME
-            self._attrs['Default Time'] = True
+            self._attrs[ATTR_DEFAULT_TIME] = True
         else:
             duration = entity.state
-            self._attrs['Default Time'] = False
-        self._attrs['Watering Duration'] = duration
+            self._attrs[ATTR_DEFAULT_TIME] = False
+        self._attrs[ATTR_DURATION] = duration
         return duration
+
+    def get_watering_volume(self):
+        entity = self.hass.states.get(self.volume_entity)
+        if not entity:
+            volume = DEFAULT_VOL
+            _LOGGER.debug(f"Entity {self.volume_entity} not found -- setting default")
+            self._attrs[ATTR_VOL] = False
+        elif entity.state == STATE_UNKNOWN:
+            volume = DEFAULT_VOL
+            _LOGGER.debug(f"Entity {self.volume_entity} state unknown -- setting default")
+            self._attrs[ATTR_VOL] = False
+        elif int(float(entity.state)) == 0:
+            volume = entity.state
+            _LOGGER.debug(f"Entity {self.volume_entity} set to 0 -- ignore")
+            self._attrs[ATTR_VOL] = False
+        else:
+            volume = entity.state
+            self._attrs[ATTR_VOL] = True
+        self._attrs[ATTR_VOLUME] = volume
+        return volume
 
     @property
     def extra_state_attributes(self):
@@ -104,14 +136,18 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
     @property
     def state(self):
         status = self.coordinator.data
+        _LOGGER.debug(f"Switch Status: {status}")
         duration = self.get_watering_duration()
         _LOGGER.debug(f"Set duration:{duration}")
-        self._attrs["is_watering"] = status["is_watering"]
+        volume = self.get_watering_volume()
+        _LOGGER.debug(f"Set volume:{volume}")
+        self._attrs[ATTR_STATE] = status[ATTR_STATE]
         state = "unknown"
-        if status["is_watering"]:
+        if status[ATTR_STATE]:
             state = "on"
-        elif not status["is_watering"]:
+        elif not status[ATTR_STATE]:
             state = "off"
+            _LOGGER.debug(f"Switch {self.name} state {state}")
         return state
 
     @property

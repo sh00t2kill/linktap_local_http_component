@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import random
 from datetime import timedelta
 from json.decoder import JSONDecodeError
 
@@ -36,38 +37,53 @@ async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry)-> bool
         gw_id = await linker.get_gw_id()
     except JSONDecodeError:
         try:
+            await asyncio.sleep(random.randint(1,3))
             gw_id = await linker.get_gw_id()
         except JSONDecodeError:
+            await asyncio.sleep(random.randint(1,3))
             gw_id = await linker.get_gw_id()
 
     _LOGGER.debug(f"Found GW_ID: {gw_id}")
 
-    devices = await linker.get_end_devs(gw_id)
+    gateway_config = await linker.get_gw_config(gw_id)
+    devices = {
+        "devs": gateway_config["end_dev"],
+        "names": gateway_config["dev_name"],
+    }
     _LOGGER.debug(f"Found devices: {devices}")
+
+    coordinator_conf = {
+        GW_IP: gw_ip,
+        GW_ID: gw_id,
+    }
     counter = 0
     tap_list = []
     for tap_id in devices["devs"]:
+        coordinator = LinktapCoordinator(hass, linker, coordinator_conf, tap_id)
         device_name = devices["names"][counter]
         tap_list.append({
             NAME: device_name,
-            TAP_ID: tap_id
+            TAP_ID: tap_id,
+            "coordinator": coordinator
         })
         counter = counter + 1
-
+        await coordinator.async_config_entry_first_refresh()
+        _LOGGER.debug(f"Coordinator has synced for {tap_id}")
     _LOGGER.debug(f"List of Taps: {tap_list}")
+
+    vol_unit = gateway_config["vol_unit"]
+    _LOGGER.debug(f"Setting volume unit to {vol_unit}")
+
     conf = {
         GW_IP: gw_ip,
         GW_ID: gw_id,
         "taps": tap_list,
+        "vol_unit": vol_unit,
     }
 
-    coordinator = LinktapCoordinator(hass, linker, conf)
-    await coordinator.async_config_entry_first_refresh()
-    _LOGGER.debug("Coordinator has synced")
 
     hass.data[DOMAIN] = {
         "conf": conf,
-        "coordinator": coordinator,
     }
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -83,16 +99,17 @@ async def async_unload_entry(hass: core.HomeAssistant, entry: ConfigEntry) -> bo
     return unload_ok
 
 class LinktapCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass, linker, conf):
+    def __init__(self, hass, linker, conf, tap_id):
         super().__init__(
             hass,
             _LOGGER,
             name=DOMAIN,
-            update_interval=timedelta(seconds=10),
+            update_interval=timedelta(seconds=13),
         )
         self.tap_api = linker
         self.conf = conf
         self.hass = hass
+        self.tap_id = tap_id
 
     async def _async_update_data(self):
         """Fetch data from API endpoint.
@@ -104,17 +121,17 @@ class LinktapCoordinator(DataUpdateCoordinator):
         #tap_id = self.conf["taps"][TAP_ID]
         gw_id = self.conf[GW_ID]
 
-        for tap in self.conf["taps"]:
-            tap_id = tap[TAP_ID]
-
-            try:
-                # Note: asyncio.TimeoutError and aiohttp.ClientError are already
-                # handled by the data update coordinator.
-                async with async_timeout.timeout(10):
-                    return await self.tap_api.fetch_data(gw_id, tap_id)
-            except ApiAuthError as err:
-                # Raising ConfigEntryAuthFailed will cancel future updates
-                # and start a config flow with SOURCE_REAUTH (async_step_reauth)
-                raise ConfigEntryAuthFailed from err
-            except ApiError as err:
-                raise UpdateFailed(f"Error communicating with API: {err}")
+        try:
+            # Note: asyncio.TimeoutError and aiohttp.ClientError are already
+            # handled by the data update coordinator.
+            async with async_timeout.timeout(10):
+                return await self.tap_api.fetch_data(gw_id, self.tap_id)
+        except:# ApiAuthError as err:
+            await asyncio.sleep(random.randint(1,3))
+            async with async_timeout.timeout(10):
+                return await self.tap_api.fetch_data(gw_id, self.tap_id)
+            # Raising ConfigEntryAuthFailed will cancel future updates
+            # and start a config flow with SOURCE_REAUTH (async_step_reauth)
+        #    raise ConfigEntryAuthFailed from err
+        #except ApiError as err:
+        #    raise UpdateFailed(f"Error communicating with API: {err}")

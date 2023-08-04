@@ -14,27 +14,27 @@ from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
 
-from .const import DOMAIN, GW_ID, GW_IP, NAME, TAP_ID
+from .const import DOMAIN, GW_ID, GW_IP, MANUFACTURER, NAME, TAP_ID
 
 _LOGGER = logging.getLogger(__name__)
 
-#async def async_setup_platform(
 async def async_setup_entry(
     hass, config, async_add_entities, discovery_info=None
 ):
     """Setup the sensor platform."""
-    coordinator = hass.data[DOMAIN]["coordinator"]
     taps = hass.data[DOMAIN]["conf"]["taps"]
+    vol_unit = hass.data[DOMAIN]["conf"]["vol_unit"]
     sensors = []
     for tap in taps:
-        #sensors = []
+        _LOGGER.debug(f"Configuring sensors for tap {tap}")
+        coordinator = tap["coordinator"]
         sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="signal", unit="%", icon="mdi:percent-circle"))
         sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="battery", unit="%", device_class="battery"))
         sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="total_duration", unit="s", icon="mdi:clock"))
         sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="remain_duration", unit="s", icon="mdi:clock"))
-        sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="speed", unit="lpm", icon="mdi:speedometer"))
-        sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="volume", unit="lpm", icon="mdi:water-percent"))
-        sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="volume_limit", unit="lpm", icon="mdi:water-percent"))
+        sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="speed", unit=f"{vol_unit}pm", icon="mdi:speedometer"))
+        sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="volume", unit=vol_unit, icon="mdi:water-percent"))
+        sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="volume_limit", unit=vol_unit, icon="mdi:water-percent"))
         sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="failsafe_duration", unit="s", icon="mdi:clock"))
         sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="plan_mode", unit="mode", icon="mdi:note"))
         sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="plan_sn", unit="sn", icon="mdi:note"))
@@ -67,7 +67,7 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
                 (DOMAIN, tap[TAP_ID])
             },
             name=tap[NAME],
-            manufacturer="Linktap",
+            manufacturer=MANUFACTURER,
             model=tap[TAP_ID],
             configuration_url="http://" + hass.data[DOMAIN]["conf"][GW_IP] + "/"
         )
@@ -79,7 +79,7 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def name(self):
-        return f"Linktap {self._id}"
+        return f"{MANUFACTURER} {self._id}"
 
     @property
     def extra_state_attributes(self):
