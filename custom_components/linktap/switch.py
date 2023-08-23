@@ -90,6 +90,15 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs):
+        # Lets check if we have a watering plan enabled
+        # If we do, chances are thats what turned the tap on, so lets force a pause of that plan.
+        # Get the remaining duration, and pause for that period of time, plus 10 seconds for good measure
+        current_plan_mode = int(self._attrs['plan_mode'])
+        if current_plan_mode > 1:
+            pause_seconds = int(self._attrs['remain_duration'])
+            _LOGGER.debug(f"Plan mode is {current_plan_mode}. Forcing a pause for {pause_seconds}")
+            if pause_seconds > 0:
+                await self.tap_api.pause_tap(self._gw_id, self.tap_id, pause_seconds + 10)
         attributes = await self.tap_api.turn_off(self._gw_id, self.tap_id)
         await self.coordinator.async_request_refresh()
 
