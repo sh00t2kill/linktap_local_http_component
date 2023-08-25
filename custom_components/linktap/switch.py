@@ -136,6 +136,7 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
     @property
     def state(self):
         status = self.coordinator.data
+        self._attrs["data"] = status
         _LOGGER.debug(f"Switch Status: {status}")
         duration = self.get_watering_duration()
         _LOGGER.debug(f"Set duration:{duration}")
