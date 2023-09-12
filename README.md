@@ -7,6 +7,7 @@ This custom component replaces both of those mechanisms, and uses the locally av
 It requires just the configuration IP of your gateway. If you have more than 1 gateway, you can setup multiple instances of the integration.
 
 A device is created for each tap found. Multi-valve TapLinkers or ValveLinkers will get a device created for each output.
+<br><b>Note:</b> version `x060820` (x is S or G, indicating that the firmware belongs to GW-01 or GW-02, respectively) is required on your Linktap Gateway in order for this component to work.
 
 For each device, multiple entities are created:<br>
 binary sensors:
