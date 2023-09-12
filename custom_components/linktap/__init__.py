@@ -10,7 +10,7 @@ import voluptuous as vol
 from h11 import Data
 from homeassistant import core
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
-from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
+from homeassistant.exceptions import IntegrationError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceEntryType
 from homeassistant.helpers.discovery import async_load_platform
@@ -46,6 +46,9 @@ async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry)-> bool
     _LOGGER.debug(f"Found GW_ID: {gw_id}")
 
     gateway_config = await linker.get_gw_config(gw_id)
+    if "end_dev" not in gateway_config:
+        raise IntegrationError("Linktap Gateway needs to be updated")
+
     devices = {
         "devs": gateway_config["end_dev"],
         "names": gateway_config["dev_name"],
