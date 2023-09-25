@@ -14,3 +14,11 @@ dismiss_alerts:
     entity:
       integration: linktap
       domain: binary_sensor
+
+pause:
+  name: Pause
+  description: Pause the watering
+  target:
+    entity:
+      integration: linktap
+      domain: switch

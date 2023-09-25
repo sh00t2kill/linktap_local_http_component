@@ -33,6 +33,9 @@ async def async_setup_entry(
         switches.append(LinktapSwitch(coordinator, hass, tap))
     async_add_entities(switches, True)
 
+    platform = entity_platform.async_get_current_platform()
+    platform.async_register_entity_service("pause", {}, "_pause_tap")
+
 class LinktapSwitch(CoordinatorEntity, SwitchEntity):
     def __init__(self, coordinator: DataUpdateCoordinator, hass, tap):
         super().__init__(coordinator)
@@ -158,3 +161,9 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
     @property
     def device_info(self) -> DeviceInfo:
         return self._attr_device_info
+
+    async def _pause_tap(self):
+        # Currently hard coding 1 hour for testing
+        _LOGGER.debug(f"Pausing {self.entity_id}")
+        await self.tap_api.pause_tap(self.gw_id, self.tap_id, 1)
+        await self.coordinator.async_request_refresh()
