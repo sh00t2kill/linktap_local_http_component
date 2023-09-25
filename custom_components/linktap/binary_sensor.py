@@ -34,6 +34,7 @@ async def async_setup_entry(
         binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, name="Is Clogged", data_attribute="is_clog",  icon="mdi:leak-off"))
         binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, data_attribute="is_broken", icon="mdi:scissors-cutting"))
         binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, data_attribute="is_manual_mode", icon="mdi:account-switch"))
+        binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, data_attribute="is_watering", icon="mdi:water"))
     async_add_entities(binary_sensors, True)
 
     platform = entity_platform.async_get_current_platform()
