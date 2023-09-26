@@ -35,7 +35,10 @@ async def async_setup_entry(
     async_add_entities(switches, True)
 
     platform = entity_platform.async_get_current_platform()
-    platform.async_register_entity_service("pause", {}, "_pause_tap")
+    platform.async_register_entity_service("pause",
+        {vol.Required("hours", default=1): vol.Coerce(int)},
+        "_pause_tap"
+        )
 
 class LinktapSwitch(CoordinatorEntity, SwitchEntity):
     def __init__(self, coordinator: DataUpdateCoordinator, hass, tap):
