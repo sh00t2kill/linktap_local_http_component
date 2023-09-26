@@ -114,7 +114,9 @@ class LinktapLocal:
             "dev_id": dev_id,
             "duration": hours
         }
+        _LOGGER.debug(f"Pause Payload: {data}")
         status = await self._request(data)
+        _LOGGER.debug(f"Pause Response: {status}")
         return status["ret"] == 0
 
     async def get_gw_config(self, gw_id):

@@ -8,7 +8,7 @@ dismiss_alert:
       domain: binary_sensor
 
 dismiss_alerts:
-  name: Reset Motor
+  name: Dismiss Alerts
   description: Dismiss all alerts
   target:
     entity:
@@ -18,6 +18,10 @@ dismiss_alerts:
 pause:
   name: Pause
   description: Pause the watering
+  fields:
+    duration:
+      example: 1
+      description: Duration in hours
   target:
     entity:
       integration: linktap
