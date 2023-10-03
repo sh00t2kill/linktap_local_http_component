@@ -64,11 +64,11 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
 
         self._attr_device_info = DeviceInfo(
             identifiers={
-                (DOMAIN, tap[TAP_ID])
+                (DOMAIN, f"{tap[TAP_ID]}_{self._gw_id}")
             },
             name=tap[NAME],
             manufacturer=MANUFACTURER,
-            model=tap[TAP_ID],
+            model=f"{tap[TAP_ID]}_{self._gw_id}",
             configuration_url="http://" + hass.data[DOMAIN]["conf"][GW_IP] + "/"
         )
 

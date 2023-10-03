@@ -46,14 +46,13 @@ class LinktapNumber(CoordinatorEntity, RestoreNumber):
         self.number_suffix = number_suffix
         self._attr_device_info = DeviceInfo(
             identifiers={
-                (DOMAIN, tap[TAP_ID])
+                (DOMAIN, f"{tap[TAP_ID]}_{self._gw_id}")
             },
             name=tap[NAME],
             manufacturer=MANUFACTURER,
-            model=tap[TAP_ID],
+            model=f"{tap[TAP_ID]}_{self._gw_id}",
             configuration_url="http://" + hass.data[DOMAIN]["conf"][GW_IP] + "/"
         )
-
         self._attrs = {}
 
     async def async_added_to_hass(self) -> None:
