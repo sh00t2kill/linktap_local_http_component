@@ -44,6 +44,7 @@ class LinktapNumber(CoordinatorEntity, RestoreNumber):
         self._attr_native_unit_of_measurement = unit_of_measurement#"m"
         self._attr_icon = icon#"mdi:clock"
         self.number_suffix = number_suffix
+        self._gw_id = hass.data[DOMAIN]["conf"][GW_ID]
         self._attr_device_info = DeviceInfo(
             identifiers={
                 (DOMAIN, f"{tap[TAP_ID]}_{self._gw_id}")

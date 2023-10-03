@@ -48,7 +48,8 @@ class LinktapBinarySensor(CoordinatorEntity, BinarySensorEntity):
         self._state = None
         if not name:
             name = data_attribute.replace("_", " ").title()
-        self.gw_id = hass.data[DOMAIN]["conf"][GW_ID]
+        #self.gw_id = hass.data[DOMAIN]["conf"][GW_ID]
+        self._gw_id = hass.data[DOMAIN]["conf"][GW_ID]
         self._name = tap[NAME] + " " + name
         self._id = self._name
         self._data_check_attribute = data_attribute

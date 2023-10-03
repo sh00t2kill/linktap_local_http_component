@@ -51,7 +51,7 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
         self.attribute = data_attribute
         self.tap_id = tap[TAP_ID]
         self.tap_name = tap[NAME]
-
+        self._gw_id = hass.data[DOMAIN]["conf"][GW_ID]
         self.platform = "sensor"
         self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{data_attribute}_{self.tap_id}")
         self._attrs = {
