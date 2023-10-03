@@ -53,7 +53,7 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
         self.tap_name = tap[NAME]
 
         self.platform = "sensor"
-        self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{data_attribute}_{self.tap_id}")
+        self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{data_attribute}_{self._gw_id}_{self.tap_id}")
         self._attrs = {
             "unit_of_measurement": unit
         }
@@ -64,11 +64,11 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
 
         self._attr_device_info = DeviceInfo(
             identifiers={
-                (DOMAIN, tap[TAP_ID])
+                (DOMAIN, f"{tap[TAP_ID]}_{self._gw_id}")
             },
             name=tap[NAME],
             manufacturer=MANUFACTURER,
-            model=tap[TAP_ID],
+            model=f"{tap[TAP_ID]}_{self._gw_id}",
             configuration_url="http://" + hass.data[DOMAIN]["conf"][GW_IP] + "/"
         )
 

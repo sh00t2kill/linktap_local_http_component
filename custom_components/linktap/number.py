@@ -37,7 +37,7 @@ class LinktapNumber(CoordinatorEntity, RestoreNumber):
         self._id = self._name
         self.tap_id = tap[TAP_ID]
         self.platform = "number"
-        self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{self.tap_id}_{number_suffix.replace(' ', '_')}")
+        self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{self._gw_id}_{self.tap_id}_{number_suffix.replace(' ', '_')}")
         self._attr_native_min_value = 0
         self._attr_native_max_value = 120
         self._attr_native_step = 5
@@ -46,11 +46,11 @@ class LinktapNumber(CoordinatorEntity, RestoreNumber):
         self.number_suffix = number_suffix
         self._attr_device_info = DeviceInfo(
             identifiers={
-                (DOMAIN, tap[TAP_ID])
+                (DOMAIN, f"{tap[TAP_ID]}_{self._gw_id}")
             },
             name=tap[NAME],
             manufacturer=MANUFACTURER,
-            model=tap[TAP_ID],
+            model=f"{tap[TAP_ID]}_{self._gw_id}",
             configuration_url="http://" + hass.data[DOMAIN]["conf"][GW_IP] + "/"
         )
 

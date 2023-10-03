@@ -56,20 +56,19 @@ class LinktapBinarySensor(CoordinatorEntity, BinarySensorEntity):
         self.tap_name = tap[NAME]
         self.tap_api = coordinator.tap_api
         self.platform = "binary_sensor"
-        self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{data_attribute}_{self.tap_id}")
+        self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{data_attribute}_{self._gw_id}_{self.tap_id}")
         if device_class:
             self._attr_device_class = device_class
         if icon:
             self._attr_icon = icon
         self._attrs = {}
         self._attr_device_info = DeviceInfo(
-            #entry_type=DeviceEntryType.SERVICE,
             identifiers={
-                (DOMAIN, tap[TAP_ID])
+                (DOMAIN, f"{tap[TAP_ID]}_{self._gw_id}")
             },
             name=tap[NAME],
             manufacturer=MANUFACTURER,
-            model=tap[TAP_ID],
+            model=f"{tap[TAP_ID]}_{self._gw_id}",
             configuration_url="http://" + hass.data[DOMAIN]["conf"][GW_IP] + "/"
         )
 
