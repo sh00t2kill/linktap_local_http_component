@@ -57,7 +57,7 @@ class LinktapBinarySensor(CoordinatorEntity, BinarySensorEntity):
         self.tap_name = tap[NAME]
         self.tap_api = coordinator.tap_api
         self.platform = "binary_sensor"
-        self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{data_attribute}_{self.tap_id}")
+        self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{data_attribute}_{self._gw_id}_{self.tap_id}")
         if device_class:
             self._attr_device_class = device_class
         if icon:

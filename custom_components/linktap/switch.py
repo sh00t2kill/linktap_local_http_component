@@ -44,7 +44,7 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
         self.tap_api = coordinator.tap_api
         self.platform = "switch"
         self.hass = hass
-        self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{self.tap_id}")
+        self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{self._gw_id}_{self.tap_id}")
         self._attr_icon = "mdi:water-pump"
         self._attrs = {
             "data": self.coordinator.data,
