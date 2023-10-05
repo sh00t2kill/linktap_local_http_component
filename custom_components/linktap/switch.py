@@ -96,11 +96,11 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
     def get_watering_duration(self):
         entity = self.hass.states.get(self.duration_entity)
         if not entity:
-            _LOGGER.debug(f"Entity {self.duration_entity} not found -- setting default")
+            _LOGGER.debug(f"GW {self._gw_id}: Entity {self.duration_entity} not found -- setting default")
             duration = DEFAULT_TIME
             self._attrs[ATTR_DEFAULT_TIME] = True
         elif entity.state == STATE_UNKNOWN:
-            _LOGGER.debug(f"Entity {self.duration_entity} state unknown -- setting default")
+            _LOGGER.debug(f"GW {self._gw_id}: Entity {self.duration_entity} state unknown -- setting default")
             duration = DEFAULT_TIME
             self._attrs[ATTR_DEFAULT_TIME] = True
         else:
@@ -113,15 +113,15 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
         entity = self.hass.states.get(self.volume_entity)
         if not entity:
             volume = DEFAULT_VOL
-            _LOGGER.debug(f"Entity {self.volume_entity} not found -- setting default")
+            _LOGGER.debug(f"GW {self._gw_id}: Entity {self.volume_entity} not found -- setting default")
             self._attrs[ATTR_VOL] = False
         elif entity.state == STATE_UNKNOWN:
             volume = DEFAULT_VOL
-            _LOGGER.debug(f"Entity {self.volume_entity} state unknown -- setting default")
+            _LOGGER.debug(f"GW {self._gw_id}: Entity {self.volume_entity} state unknown -- setting default")
             self._attrs[ATTR_VOL] = False
         elif int(float(entity.state)) == 0:
             volume = entity.state
-            _LOGGER.debug(f"Entity {self.volume_entity} set to 0 -- ignore")
+            _LOGGER.debug(f"GW {self._gw_id}: Entity {self.volume_entity} set to 0 -- ignore")
             self._attrs[ATTR_VOL] = False
         else:
             volume = entity.state
@@ -137,18 +137,18 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
     def state(self):
         status = self.coordinator.data
         self._attrs["data"] = status
-        _LOGGER.debug(f"Switch Status: {status}")
+        _LOGGER.debug(f"GW {self._gw_id}: Switch Status: {status}")
         duration = self.get_watering_duration()
-        _LOGGER.debug(f"Set duration:{duration}")
+        _LOGGER.debug(f"GW {self._gw_id}: Set duration:{duration}")
         volume = self.get_watering_volume()
-        _LOGGER.debug(f"Set volume:{volume}")
+        _LOGGER.debug(f"GW {self._gw_id}: Set volume:{volume}")
         self._attrs[ATTR_STATE] = status[ATTR_STATE]
         state = "unknown"
         if status[ATTR_STATE]:
             state = "on"
         elif not status[ATTR_STATE]:
             state = "off"
-            _LOGGER.debug(f"Switch {self.name} state {state}")
+            _LOGGER.debug(f"GW {self._gw_id}: Switch {self.name} state {state}")
         return state
 
     @property

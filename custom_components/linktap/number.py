@@ -60,10 +60,10 @@ class LinktapNumber(CoordinatorEntity, RestoreNumber):
         await super().async_added_to_hass()
         restored_number = await self.async_get_last_number_data()
         if restored_number is not None and restored_number.native_value != STATE_UNKNOWN:
-            _LOGGER.debug(f"Restoring value to {restored_number.native_value}")
+            _LOGGER.debug(f"GW {self._gw_id}: Restoring value to {restored_number.native_value}")
             self._attr_native_value = restored_number.native_value
         else:
-            _LOGGER.debug(f"No value found to restore -- setting default")
+            _LOGGER.debug(f"GW {self._gw_id}: No value found to restore -- setting default")
             if self.number_suffix == "Watering Volume":
                 self._attr_native_value = DEFAULT_VOL
             else:

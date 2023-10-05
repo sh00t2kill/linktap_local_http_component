@@ -89,7 +89,7 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
     def state(self):
 
         attributes = self.coordinator.data
-        _LOGGER.debug(f"Sensor state: {attributes}")
+        _LOGGER.debug(f"GW {self._gw_id}: Sensor state: {attributes}")
 
         if not attributes:
             self._state = "unknown"
