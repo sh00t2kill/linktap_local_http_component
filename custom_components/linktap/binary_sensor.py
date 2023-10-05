@@ -28,7 +28,9 @@ async def async_setup_entry(
     for tap in taps:
         coordinator = tap["coordinator"]
         coordinator_gw_id = coordinator.get_gw_id()
-        if coordinator_gw_id == tap[GW_ID]:
+        if "binary_sensors" not in hass.data[DOMAIN]:
+            hass.data[DOMAIN]["binary_sensors"] = []
+        if coordinator_gw_id == tap[GW_ID] and tap not in hass.data[DOMAIN]["binary_sensors"]:
             _LOGGER.debug(f"Configuring binary sensors for tap {tap}")
             binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, name="Is Linked", data_attribute="is_rf_linked"))
             binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, data_attribute="is_fall", icon="mdi:meter-electric-outline"))
@@ -38,8 +40,9 @@ async def async_setup_entry(
             binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, data_attribute="is_broken", icon="mdi:scissors-cutting"))
             binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, data_attribute="is_manual_mode", icon="mdi:account-switch"))
             binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, data_attribute="is_watering", icon="mdi:water"))
+            hass.data[DOMAIN]["binary_sensors"].append(tap)
         else:
-            _LOGGER.debug(f"Skipping binary sensors for tap {tap[NAME]} as it is not connected to the gateway {tap[GW_ID]}")
+            _LOGGER.debug(f"Skipping binary sensors for tap {tap[NAME]}")
     async_add_entities(binary_sensors, True)
 
     platform = entity_platform.async_get_current_platform()
@@ -70,7 +73,7 @@ class LinktapBinarySensor(CoordinatorEntity, BinarySensorEntity):
         self._attr_device_info = DeviceInfo(
             #entry_type=DeviceEntryType.SERVICE,
             identifiers={
-                (DOMAIN, tap[TAP_ID])
+                (DOMAIN, tap[TAP_ID], tap[GW_ID])
             },
             name=tap[NAME],
             manufacturer=MANUFACTURER,

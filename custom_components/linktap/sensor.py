@@ -32,7 +32,9 @@ async def async_setup_entry(
         coordinator_gw_id = coordinator.get_gw_id()
         vol_unit = coordinator.get_vol_unit()
         _LOGGER.debug(f"Tap GWID: {tap[GW_ID]}. Coordinator GWID: {coordinator_gw_id}")
-        if coordinator_gw_id == tap[GW_ID]:
+        if "sensors" not in hass.data[DOMAIN]:
+            hass.data[DOMAIN]["sensors"] = []
+        if coordinator_gw_id == tap[GW_ID] and tap not in hass.data[DOMAIN]["sensors"]:
             _LOGGER.debug(f"Adding sensors for tap {tap[NAME]}")
             sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="signal", unit="%", icon="mdi:percent-circle"))
             sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="battery", unit="%", device_class="battery"))
@@ -44,8 +46,9 @@ async def async_setup_entry(
             sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="failsafe_duration", unit="s", icon="mdi:clock"))
             sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="plan_mode", unit="mode", icon="mdi:note"))
             sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="plan_sn", unit="sn", icon="mdi:note"))
+            hass.data[DOMAIN]["sensors"].append(tap)
         else:
-            _LOGGER.debug(f"Skipping sensors for tap {tap[NAME]} as it is not connected to the gateway {tap[GW_ID]}")
+            _LOGGER.debug(f"Skipping sensors for tap {tap[NAME]}")
     async_add_entities(sensors, True)
 
 class LinktapSensor(CoordinatorEntity, SensorEntity):
@@ -72,7 +75,7 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
 
         self._attr_device_info = DeviceInfo(
             identifiers={
-                (DOMAIN, tap[TAP_ID])
+                (DOMAIN, tap[TAP_ID], tap[GW_ID])
             },
             name=tap[NAME],
             manufacturer=MANUFACTURER,

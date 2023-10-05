@@ -32,11 +32,14 @@ async def async_setup_entry(
         coordinator = tap["coordinator"]
         coordinator_gw_id = coordinator.get_gw_id()
         _LOGGER.debug(f"Tap GWID: {tap[GW_ID]}. Coordinator GWID: {coordinator_gw_id}")
-        if coordinator_gw_id == tap[GW_ID]:
+        if "switches" not in hass.data[DOMAIN]:
+            hass.data[DOMAIN]["switches"] = []
+        if coordinator_gw_id == tap[GW_ID] and tap not in hass.data[DOMAIN]["switches"]:
             _LOGGER.debug(f"Configuring switch for tap {tap[NAME]}")
             switches.append(LinktapSwitch(coordinator, hass, tap))
+            hass.data[DOMAIN]["switches"].append(tap)
         else:
-            _LOGGER.debug(f"Skipping switch for tap {tap[NAME]} as gateway {tap[GW_ID]} doesnt match")
+            _LOGGER.debug(f"Skipping switch for tap {tap[NAME]}")
     async_add_entities(switches, True)
 
 class LinktapSwitch(CoordinatorEntity, SwitchEntity):
@@ -59,7 +62,7 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
         }
         self._attr_device_info = DeviceInfo(
             identifiers={
-                (DOMAIN, tap[TAP_ID])
+                (DOMAIN, tap[TAP_ID], tap[GW_ID])
             },
             name=tap[NAME],
             manufacturer=MANUFACTURER,

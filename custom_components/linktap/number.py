@@ -28,10 +28,13 @@ async def async_setup_entry(
         coordinator_gw_id = coordinator.get_gw_id()
         _LOGGER.debug(f"Tap GWID: {tap[GW_ID]}. Coordinator GWID: {coordinator_gw_id}")
         vol_unit = coordinator.get_vol_unit()
-        if coordinator_gw_id == tap[GW_ID]:
+        if "numbers" not in hass.data[DOMAIN]:
+            hass.data[DOMAIN]["numbers"] = []
+        if coordinator_gw_id == tap[GW_ID] and tap not in hass.data[DOMAIN]["numbers"]:
             _LOGGER.debug(f"Including numbers for tap {tap[NAME]}")
             numbers.append(LinktapNumber(coordinator, hass, tap, "Watering Duration", "mdi:clock", "m"))
             numbers.append(LinktapNumber(coordinator, hass, tap, "Watering Volume", "mdi:water", vol_unit))
+            hass.data[DOMAIN]["numbers"].append(tap)
         else:
             _LOGGER.debug(f"Skipping numbers for tap {tap[NAME]}")
 
@@ -54,7 +57,7 @@ class LinktapNumber(CoordinatorEntity, RestoreNumber):
         self.number_suffix = number_suffix
         self._attr_device_info = DeviceInfo(
             identifiers={
-                (DOMAIN, tap[TAP_ID])
+                (DOMAIN, tap[TAP_ID], tap[GW_ID])
             },
             name=tap[NAME],
             manufacturer=MANUFACTURER,
