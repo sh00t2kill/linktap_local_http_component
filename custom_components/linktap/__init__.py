@@ -84,15 +84,13 @@ async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry)-> bool
         "taps": tap_list,
         "vol_unit": vol_unit,
     }
-
-    #hass.data[DOMAIN] = []
     config_data = {
         gw_ip: {
             "conf": conf
         }
     }
+
     hass.data[DOMAIN] = config_data
-    #hass.data[DOMAIN].append(config_data)
     _LOGGER.debug(hass.data[DOMAIN])
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -153,4 +151,3 @@ class LinktapCoordinator(DataUpdateCoordinator):
         #    raise ConfigEntryAuthFailed from err
         #except ApiError as err:
         #    raise UpdateFailed(f"Error communicating with API: {err}")
-
