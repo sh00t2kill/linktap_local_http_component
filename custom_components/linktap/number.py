@@ -18,17 +18,20 @@ async def async_setup_entry(
     hass, config, async_add_entities, discovery_info=None
 ):
     """Setup the number platform."""
-    taps = hass.data[DOMAIN]["conf"]["taps"]
+    #taps = hass.data[DOMAIN]["conf"]["taps"]
+    taps = hass.data[DOMAIN]["taps"]
     numbers = []
     for tap in taps:
         """For each tap, we set a number for duration and volume"""
         _LOGGER.debug(f"Configuring numbers for tap {tap}")
         coordinator = tap["coordinator"]
         coordinator_gw_id = coordinator.get_gw_id()
+        _LOGGER.debug(f"Tap GWID: {tap[GW_ID]}. Coordinator GWID: {coordinator_gw_id}")
+        vol_unit = coordinator.get_vol_unit()
         if coordinator_gw_id == tap[GW_ID]:
             _LOGGER.debug(f"Including numbers for tap {tap[NAME]}")
             numbers.append(LinktapNumber(coordinator, hass, tap, "Watering Duration", "mdi:clock", "m"))
-            numbers.append(LinktapNumber(coordinator, hass, tap, "Watering Volume", "mdi:water", hass.data[DOMAIN]["conf"]["vol_unit"]))
+            numbers.append(LinktapNumber(coordinator, hass, tap, "Watering Volume", "mdi:water", vol_unit))
         else:
             _LOGGER.debug(f"Skipping numbers for tap {tap[NAME]}")
 
@@ -56,7 +59,7 @@ class LinktapNumber(CoordinatorEntity, RestoreNumber):
             name=tap[NAME],
             manufacturer=MANUFACTURER,
             model=tap[TAP_ID],
-            configuration_url="http://" + hass.data[DOMAIN]["conf"][GW_IP] + "/"
+            configuration_url="http://" + tap[GW_IP] + "/"
         )
 
         self._attrs = {}

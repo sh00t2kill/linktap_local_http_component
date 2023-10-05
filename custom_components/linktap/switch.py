@@ -25,11 +25,13 @@ async def async_setup_entry(
     hass, config, async_add_entities, discovery_info=None
 ):
     """Setup the switch platform."""
-    taps = hass.data[DOMAIN]["conf"]["taps"]
+    #taps = hass.data[DOMAIN]["conf"]["taps"]
+    taps = hass.data[DOMAIN]["taps"]
     switches = []
     for tap in taps:
         coordinator = tap["coordinator"]
         coordinator_gw_id = coordinator.get_gw_id()
+        _LOGGER.debug(f"Tap GWID: {tap[GW_ID]}. Coordinator GWID: {coordinator_gw_id}")
         if coordinator_gw_id == tap[GW_ID]:
             _LOGGER.debug(f"Configuring switch for tap {tap[NAME]}")
             switches.append(LinktapSwitch(coordinator, hass, tap))
@@ -43,7 +45,7 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
         self._state = None
         self._name = tap[NAME]
         self._id = tap[TAP_ID]
-        self._gw_id = hass.data[DOMAIN]["conf"][GW_ID]
+        self._gw_id = tap[GW_ID]
         self.tap_id = tap[TAP_ID]
         self.tap_api = coordinator.tap_api
         self.platform = "switch"
@@ -62,7 +64,7 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
             name=tap[NAME],
             manufacturer=MANUFACTURER,
             model=tap[TAP_ID],
-            configuration_url="http://" + hass.data[DOMAIN]["conf"][GW_IP] + "/"
+            configuration_url="http://" + tap[GW_IP] + "/"
         )
 
     @property

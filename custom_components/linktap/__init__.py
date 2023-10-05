@@ -58,16 +58,23 @@ async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry)-> bool
     coordinator_conf = {
         GW_IP: gw_ip,
         GW_ID: gw_id,
+        "vol_unit": gateway_config["vol_unit"]
     }
     counter = 0
     tap_list = []
+    if DOMAIN not in hass.data:
+        hass.data[DOMAIN] = {}
+    if "taps" not in hass.data[DOMAIN]:
+        hass.data[DOMAIN]["taps"] = []
     for tap_id in devices["devs"]:
         coordinator = LinktapCoordinator(hass, linker, coordinator_conf, tap_id)
         device_name = devices["names"][counter]
-        tap_list.append({
+        #tap_list.append({
+        hass.data[DOMAIN]["taps"].append({
             NAME: device_name,
             TAP_ID: tap_id,
             GW_ID: gw_id,
+            GW_IP: gw_ip,
             "coordinator": coordinator
         })
         counter = counter + 1
@@ -78,17 +85,17 @@ async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry)-> bool
     vol_unit = gateway_config["vol_unit"]
     _LOGGER.debug(f"{gw_id}: Setting volume unit to {vol_unit}")
 
-    conf = {
-        GW_IP: gw_ip,
-        GW_ID: gw_id,
-        "taps": tap_list,
-        "vol_unit": vol_unit,
-    }
+    #conf = {
+    #    GW_IP: gw_ip,
+    #    GW_ID: gw_id,
+    #    "taps": tap_list,
+    #    "vol_unit": vol_unit,
+    #}
 
 
-    hass.data[DOMAIN] = {
-        "conf": conf,
-    }
+    #hass.data[DOMAIN] = {
+    #    "conf": conf,
+    #}
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -117,6 +124,9 @@ class LinktapCoordinator(DataUpdateCoordinator):
 
     def get_gw_id(self):
         return self.conf[GW_ID]
+
+    def get_vol_unit(self):
+        return self.conf["vol_unit"]
 
     async def _async_update_data(self):
         """Fetch data from API endpoint.
