@@ -22,8 +22,9 @@ async def async_setup_entry(
     hass, config, async_add_entities, discovery_info=None
 ):
     """Setup the sensor platform."""
-    taps = hass.data[DOMAIN]["conf"]["taps"]
-    vol_unit = hass.data[DOMAIN]["conf"]["vol_unit"]
+    gw_ip = config.data.get(GW_IP)
+    taps = hass.data[DOMAIN][gw_ip]["conf"]["taps"]
+    vol_unit = hass.data[DOMAIN][gw_ip]["conf"]["vol_unit"]
     sensors = []
     for tap in taps:
         _LOGGER.debug(f"Configuring sensors for tap {tap}")
@@ -69,7 +70,7 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
             name=tap[NAME],
             manufacturer=MANUFACTURER,
             model=tap[TAP_ID],
-            configuration_url="http://" + hass.data[DOMAIN]["conf"][GW_IP] + "/"
+            configuration_url="http://" + tap[GW_IP] + "/"
         )
 
     @property

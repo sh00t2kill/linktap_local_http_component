@@ -22,7 +22,8 @@ async def async_setup_entry(
     hass, config, async_add_entities, discovery_info=None
 ):
     """Setup the sensor platform."""
-    taps = hass.data[DOMAIN]["conf"]["taps"]
+    gw_ip = config.data.get(GW_IP)
+    taps = hass.data[DOMAIN][gw_ip]["conf"]["taps"]
     binary_sensors = []
     for tap in taps:
         coordinator = tap["coordinator"]
@@ -48,7 +49,6 @@ class LinktapBinarySensor(CoordinatorEntity, BinarySensorEntity):
         self._state = None
         if not name:
             name = data_attribute.replace("_", " ").title()
-        self.gw_id = hass.data[DOMAIN]["conf"][GW_ID]
         self._name = tap[NAME] + " " + name
         self._id = self._name
         self._data_check_attribute = data_attribute
@@ -70,7 +70,7 @@ class LinktapBinarySensor(CoordinatorEntity, BinarySensorEntity):
             name=tap[NAME],
             manufacturer=MANUFACTURER,
             model=tap[TAP_ID],
-            configuration_url="http://" + hass.data[DOMAIN]["conf"][GW_IP] + "/"
+            configuration_url="http://" + tap[GW_IP] + "/"
         )
 
     @property
@@ -99,7 +99,7 @@ class LinktapBinarySensor(CoordinatorEntity, BinarySensorEntity):
 
     async def _dismiss_alerts(self):
         _LOGGER.debug(f"Dismissing all alerts for {self.entity_id}")
-        await self.tap_api.dismiss_alert(self.gw_id, self.tap_id)
+        await self.tap_api.dismiss_alert(self.coordinator.get_gw_id(), self.tap_id)
 
     """alert: type of alert
     0: all types of alert.
@@ -115,7 +115,7 @@ class LinktapBinarySensor(CoordinatorEntity, BinarySensorEntity):
         alert_id = self.alert_lookup(alert_type)
         if alert_id is not None:
             _LOGGER.debug(f"Dismissing {alert_type} alert for {self.entity_id}")
-            await self.tap_api.dismiss_alert(self.gw_id, self.tap_id)
+            await self.tap_api.dismiss_alert(self.coordinator.get_gw_id(), self.tap_id)
         else:
             _LOGGER.debug("No matching alert found. Do nothing")
 

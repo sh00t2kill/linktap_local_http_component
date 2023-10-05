@@ -67,6 +67,7 @@ async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry)-> bool
         tap_list.append({
             NAME: device_name,
             TAP_ID: tap_id,
+            GW_IP: gw_ip,
             "coordinator": coordinator
         })
         counter = counter + 1
@@ -83,12 +84,14 @@ async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry)-> bool
         "taps": tap_list,
         "vol_unit": vol_unit,
     }
-
-
-    hass.data[DOMAIN] = {
-        "conf": conf,
+    config_data = {
+        gw_ip: {
+            "conf": conf
+        }
     }
 
+    hass.data[DOMAIN] = config_data
+    _LOGGER.debug(hass.data[DOMAIN])
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
 
@@ -100,6 +103,10 @@ async def async_unload_entry(hass: core.HomeAssistant, entry: ConfigEntry) -> bo
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
     return unload_ok
+
+async def async_remove_config_entry_device(hass: core.HomeAssistant, entry: ConfigEntry, device) -> bool:
+    device_registry(hass).async_remove_device(device.id)
+    return True
 
 class LinktapCoordinator(DataUpdateCoordinator):
     def __init__(self, hass, linker, conf, tap_id):
@@ -113,6 +120,12 @@ class LinktapCoordinator(DataUpdateCoordinator):
         self.conf = conf
         self.hass = hass
         self.tap_id = tap_id
+
+    def get_gw_id(self):
+        return self.conf[GW_ID]
+
+    #def get_vol_unit(self):
+    #    return self.conf["vol_unit"]
 
     async def _async_update_data(self):
         """Fetch data from API endpoint.
