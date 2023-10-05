@@ -12,6 +12,7 @@ from homeassistant import core
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.exceptions import IntegrationError
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.device_registry import async_get as device_registry
 from homeassistant.helpers.device_registry import DeviceEntryType
 from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.helpers.entity import DeviceInfo
@@ -153,3 +154,7 @@ class LinktapCoordinator(DataUpdateCoordinator):
         #    raise ConfigEntryAuthFailed from err
         #except ApiError as err:
         #    raise UpdateFailed(f"Error communicating with API: {err}")
+
+async def async_remove_config_entry_device(hass: core.HomeAssistant, entry: ConfigEntry, device) -> bool:
+    device_registry(hass).async_remove_device(device.id)
+    return True
