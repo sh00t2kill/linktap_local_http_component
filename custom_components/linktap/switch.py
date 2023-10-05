@@ -29,8 +29,12 @@ async def async_setup_entry(
     switches = []
     for tap in taps:
         coordinator = tap["coordinator"]
-        _LOGGER.debug(f"Configuring switch for tap {tap}")
-        switches.append(LinktapSwitch(coordinator, hass, tap))
+        coordinator_gw_id = coordinator.get_gw_id()
+        if coordinator_gw_id == tap[GW_ID]:
+            _LOGGER.debug(f"Configuring switch for tap {tap[NAME]}")
+            switches.append(LinktapSwitch(coordinator, hass, tap))
+        else:
+            _LOGGER.debug(f"Skipping switch for tap {tap[NAME]} as gateway {tap[GW_ID]} doesnt match")
     async_add_entities(switches, True)
 
 class LinktapSwitch(CoordinatorEntity, SwitchEntity):

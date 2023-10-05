@@ -53,7 +53,7 @@ async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry)-> bool
         "devs": gateway_config["end_dev"],
         "names": gateway_config["dev_name"],
     }
-    _LOGGER.debug(f"Found devices: {devices}")
+    _LOGGER.debug(f"{gw_id}: Found devices: {devices}")
 
     coordinator_conf = {
         GW_IP: gw_ip,
@@ -67,15 +67,16 @@ async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry)-> bool
         tap_list.append({
             NAME: device_name,
             TAP_ID: tap_id,
+            GW_ID: gw_id,
             "coordinator": coordinator
         })
         counter = counter + 1
         await coordinator.async_config_entry_first_refresh()
         _LOGGER.debug(f"Coordinator has synced for {tap_id}")
-    _LOGGER.debug(f"List of Taps: {tap_list}")
+    _LOGGER.debug(f"{gw_id}: List of Taps: {tap_list}")
 
     vol_unit = gateway_config["vol_unit"]
-    _LOGGER.debug(f"Setting volume unit to {vol_unit}")
+    _LOGGER.debug(f"{gw_id}: Setting volume unit to {vol_unit}")
 
     conf = {
         GW_IP: gw_ip,
@@ -114,6 +115,9 @@ class LinktapCoordinator(DataUpdateCoordinator):
         self.hass = hass
         self.tap_id = tap_id
 
+    def get_gw_id(self):
+        return self.conf[GW_ID]
+
     async def _async_update_data(self):
         """Fetch data from API endpoint.
 
@@ -122,7 +126,8 @@ class LinktapCoordinator(DataUpdateCoordinator):
         """
 
         #tap_id = self.conf["taps"][TAP_ID]
-        gw_id = self.conf[GW_ID]
+        gw_id = self.get_gw_id()
+        _LOGGER.debug(f"GW {gw_id}: Updating data for {self.tap_id}...")
 
         try:
             # Note: asyncio.TimeoutError and aiohttp.ClientError are already

@@ -23,9 +23,14 @@ async def async_setup_entry(
     for tap in taps:
         """For each tap, we set a number for duration and volume"""
         _LOGGER.debug(f"Configuring numbers for tap {tap}")
-        coordinator = coordinator = tap["coordinator"]
-        numbers.append(LinktapNumber(coordinator, hass, tap, "Watering Duration", "mdi:clock", "m"))
-        numbers.append(LinktapNumber(coordinator, hass, tap, "Watering Volume", "mdi:water", hass.data[DOMAIN]["conf"]["vol_unit"]))
+        coordinator = tap["coordinator"]
+        coordinator_gw_id = coordinator.get_gw_id()
+        if coordinator_gw_id == tap[GW_ID]:
+            _LOGGER.debug(f"Including numbers for tap {tap[NAME]}")
+            numbers.append(LinktapNumber(coordinator, hass, tap, "Watering Duration", "mdi:clock", "m"))
+            numbers.append(LinktapNumber(coordinator, hass, tap, "Watering Volume", "mdi:water", hass.data[DOMAIN]["conf"]["vol_unit"]))
+        else:
+            _LOGGER.debug(f"Skipping numbers for tap {tap[NAME]}")
 
     async_add_entities(numbers, True)
 

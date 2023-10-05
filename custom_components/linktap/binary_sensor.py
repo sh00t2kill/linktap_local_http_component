@@ -26,15 +26,19 @@ async def async_setup_entry(
     binary_sensors = []
     for tap in taps:
         coordinator = tap["coordinator"]
-        _LOGGER.debug(f"Configuring binary sensors for tap {tap}")
-        binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, name="Is Linked", data_attribute="is_rf_linked"))
-        binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, data_attribute="is_fall", icon="mdi:meter-electric-outline"))
-        binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, data_attribute="is_cutoff", icon="mdi:scissors-cutting"))
-        binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, name="Is Leaking", data_attribute="is_leak", icon="mdi:leak"))
-        binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, name="Is Clogged", data_attribute="is_clog",  icon="mdi:leak-off"))
-        binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, data_attribute="is_broken", icon="mdi:scissors-cutting"))
-        binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, data_attribute="is_manual_mode", icon="mdi:account-switch"))
-        binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, data_attribute="is_watering", icon="mdi:water"))
+        coordinator_gw_id = coordinator.get_gw_id()
+        if coordinator_gw_id == tap[GW_ID]:
+            _LOGGER.debug(f"Configuring binary sensors for tap {tap}")
+            binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, name="Is Linked", data_attribute="is_rf_linked"))
+            binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, data_attribute="is_fall", icon="mdi:meter-electric-outline"))
+            binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, data_attribute="is_cutoff", icon="mdi:scissors-cutting"))
+            binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, name="Is Leaking", data_attribute="is_leak", icon="mdi:leak"))
+            binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, name="Is Clogged", data_attribute="is_clog",  icon="mdi:leak-off"))
+            binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, data_attribute="is_broken", icon="mdi:scissors-cutting"))
+            binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, data_attribute="is_manual_mode", icon="mdi:account-switch"))
+            binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, data_attribute="is_watering", icon="mdi:water"))
+        else:
+            _LOGGER.debug(f"Skipping binary sensors for tap {tap[NAME]} as it is not connected to the gateway {tap[GW_ID]}")
     async_add_entities(binary_sensors, True)
 
     platform = entity_platform.async_get_current_platform()
