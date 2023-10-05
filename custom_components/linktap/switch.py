@@ -25,7 +25,8 @@ async def async_setup_entry(
     hass, config, async_add_entities, discovery_info=None
 ):
     """Setup the switch platform."""
-    taps = hass.data[DOMAIN]["conf"]["taps"]
+    gw_ip = config.data.get(GW_IP)
+    taps = hass.data[DOMAIN][gw_ip]["conf"]["taps"]
     switches = []
     for tap in taps:
         coordinator = tap["coordinator"]
@@ -39,7 +40,6 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
         self._state = None
         self._name = tap[NAME]
         self._id = tap[TAP_ID]
-        self._gw_id = hass.data[DOMAIN]["conf"][GW_ID]
         self.tap_id = tap[TAP_ID]
         self.tap_api = coordinator.tap_api
         self.platform = "switch"
@@ -57,8 +57,7 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
             },
             name=tap[NAME],
             manufacturer=MANUFACTURER,
-            model=tap[TAP_ID],
-            configuration_url="http://" + hass.data[DOMAIN]["conf"][GW_IP] + "/"
+            configuration_url="http://" + tap[GW_IP] + "/"
         )
 
     @property
@@ -86,11 +85,13 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
         #watering_volume = None
         #if volume != DEFAULT_VOL:
         #    watering_volume = volume
-        attributes = await self.tap_api.turn_on(self._gw_id, self.tap_id, seconds, self.get_watering_volume())
+        gw_id = self.coordinator.get_gw_id()
+        attributes = await self.tap_api.turn_on(gw_id, self.tap_id, seconds, self.get_watering_volume())
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs):
-        attributes = await self.tap_api.turn_off(self._gw_id, self.tap_id)
+        gw_id = self.coordinator.get_gw_id()
+        attributes = await self.tap_api.turn_off(gw_id, self.tap_id)
         await self.coordinator.async_request_refresh()
 
     def get_watering_duration(self):

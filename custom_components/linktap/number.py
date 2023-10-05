@@ -18,14 +18,15 @@ async def async_setup_entry(
     hass, config, async_add_entities, discovery_info=None
 ):
     """Setup the number platform."""
-    taps = hass.data[DOMAIN]["conf"]["taps"]
+    gw_ip = config.data.get(GW_IP)
+    taps = hass.data[DOMAIN][gw_ip]["conf"]["taps"]
     numbers = []
     for tap in taps:
         """For each tap, we set a number for duration and volume"""
         _LOGGER.debug(f"Configuring numbers for tap {tap}")
         coordinator = coordinator = tap["coordinator"]
         numbers.append(LinktapNumber(coordinator, hass, tap, "Watering Duration", "mdi:clock", "m"))
-        numbers.append(LinktapNumber(coordinator, hass, tap, "Watering Volume", "mdi:water", hass.data[DOMAIN]["conf"]["vol_unit"]))
+        numbers.append(LinktapNumber(coordinator, hass, tap, "Watering Volume", "mdi:water", hass.data[DOMAIN][gw_ip]["conf"]["vol_unit"]))
 
     async_add_entities(numbers, True)
 
@@ -51,7 +52,7 @@ class LinktapNumber(CoordinatorEntity, RestoreNumber):
             name=tap[NAME],
             manufacturer=MANUFACTURER,
             model=tap[TAP_ID],
-            configuration_url="http://" + hass.data[DOMAIN]["conf"][GW_IP] + "/"
+            configuration_url="http://" + tap[GW_IP] + "/"
         )
 
         self._attrs = {}
