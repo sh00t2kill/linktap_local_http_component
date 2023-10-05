@@ -55,11 +55,12 @@ async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry)-> bool
         "names": gateway_config["dev_name"],
     }
     _LOGGER.debug(f"{gw_id}: Found devices: {devices}")
-
+    vol_unit = gateway_config["vol_unit"]
+    _LOGGER.debug(f"{gw_id}: Setting volume unit to {vol_unit}")
     coordinator_conf = {
         GW_IP: gw_ip,
         GW_ID: gw_id,
-        "vol_unit": gateway_config["vol_unit"]
+        "vol_unit": vol_unit
     }
     counter = 0
     tap_list = []
@@ -70,33 +71,19 @@ async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry)-> bool
     for tap_id in devices["devs"]:
         coordinator = LinktapCoordinator(hass, linker, coordinator_conf, tap_id)
         device_name = devices["names"][counter]
-        #tap_list.append({
-        hass.data[DOMAIN]["taps"].append({
+        tap_data = {
             NAME: device_name,
             TAP_ID: tap_id,
             GW_ID: gw_id,
             GW_IP: gw_ip,
             "coordinator": coordinator
-        })
+        }
+        if tap_data not in hass.data[DOMAIN]["taps"]:
+            hass.data[DOMAIN]["taps"].append(tap_data)
         counter = counter + 1
         await coordinator.async_config_entry_first_refresh()
         _LOGGER.debug(f"Coordinator has synced for {tap_id}")
     _LOGGER.debug(f"{gw_id}: List of Taps: {tap_list}")
-
-    vol_unit = gateway_config["vol_unit"]
-    _LOGGER.debug(f"{gw_id}: Setting volume unit to {vol_unit}")
-
-    #conf = {
-    #    GW_IP: gw_ip,
-    #    GW_ID: gw_id,
-    #    "taps": tap_list,
-    #    "vol_unit": vol_unit,
-    #}
-
-
-    #hass.data[DOMAIN] = {
-    #    "conf": conf,
-    #}
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
