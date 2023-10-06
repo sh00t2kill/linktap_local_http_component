@@ -23,11 +23,12 @@ async def async_setup_entry(
     hass, config, async_add_entities, discovery_info=None
 ):
     """Setup the sensor platform."""
-    config_id = config.unique_id
-    _LOGGER.debug(f"Configuring binary sensor entities for config {config_id}")
-    if config_id not in hass.data[DOMAIN]:
-        await asyncio.sleep(random.randint(1,3))
-    taps = hass.data[DOMAIN][config_id]["conf"]["taps"]
+    #config_id = config.unique_id
+    #_LOGGER.debug(f"Configuring binary sensor entities for config {config_id}")
+    #if config_id not in hass.data[DOMAIN]:
+    #    await asyncio.sleep(random.randint(1,3))
+    #taps = hass.data[DOMAIN][config_id]["conf"]["taps"]
+    taps = hass.data[DOMAIN][config.entry_id]["conf"]["taps"]
     binary_sensors = []
     for tap in taps:
         coordinator = tap["coordinator"]
