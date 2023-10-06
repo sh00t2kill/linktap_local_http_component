@@ -25,8 +25,9 @@ async def async_setup_entry(
     hass, config, async_add_entities, discovery_info=None
 ):
     """Setup the switch platform."""
-    gw_ip = config.data.get(GW_IP)
-    taps = hass.data[DOMAIN][gw_ip]["conf"]["taps"]
+    config_id = config.unique_id
+    _LOGGER.debug(f"Configuring switch entities for config {config_id}")
+    taps = hass.data[DOMAIN][config_id]["conf"]["taps"]
     switches = []
     for tap in taps:
         coordinator = tap["coordinator"]
