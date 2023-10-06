@@ -84,16 +84,12 @@ async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry)-> bool
         "taps": tap_list,
         "vol_unit": vol_unit,
     }
-    config_data = {
-        entry.unique_id: {
-            "conf": conf
-        }
-    }
 
-    hass.data[DOMAIN] = config_data
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {"conf": conf}
     _LOGGER.debug(hass.data[DOMAIN])
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
+    # Reload entry when its updated.
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
     return True
 
@@ -151,3 +147,7 @@ class LinktapCoordinator(DataUpdateCoordinator):
         #    raise ConfigEntryAuthFailed from err
         #except ApiError as err:
         #    raise UpdateFailed(f"Error communicating with API: {err}")
+
+async def async_reload_entry(hass: core.HomeAssistant, entry: ConfigEntry) -> None:
+    """Reload the config entry when it changed."""
+    await hass.config_entries.async_reload(entry.entry_id)
