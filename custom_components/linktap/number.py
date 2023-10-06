@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import random
 
 from homeassistant.components.number import RestoreNumber
 from homeassistant.const import STATE_UNKNOWN
