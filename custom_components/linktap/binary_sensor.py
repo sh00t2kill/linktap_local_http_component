@@ -23,6 +23,7 @@ async def async_setup_entry(
 ):
     """Setup the sensor platform."""
     config_id = config.unique_id
+    _LOGGER.debug(f"Configuring binary sensor entities for config {config_id}")
     taps = hass.data[DOMAIN][config_id]["conf"]["taps"]
     binary_sensors = []
     for tap in taps:

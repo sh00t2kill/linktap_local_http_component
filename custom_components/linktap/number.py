@@ -19,6 +19,7 @@ async def async_setup_entry(
 ):
     """Setup the number platform."""
     config_id = config.unique_id
+    _LOGGER.debug(f"Configuring number entities for config {config_id}")
     taps = hass.data[DOMAIN][config_id]["conf"]["taps"]
     numbers = []
     for tap in taps:
