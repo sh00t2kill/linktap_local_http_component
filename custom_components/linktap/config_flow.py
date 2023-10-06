@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import secrets
 
 import voluptuous as vol
 from homeassistant import config_entries
@@ -24,12 +25,12 @@ class LinktapFlowHandler(config_entries.ConfigFlow):
         errors = None
 
         if user_input is not None:
+            await self.async_set_unique_id(secrets.token_hex(8))
+            self._abort_if_unique_id_configured()
             return self.async_create_entry(title=DEFAULT_NAME, data=user_input)
 
         new_user_input = {
             vol.Required(GW_IP, default=GW_IP): str,
-            #vol.Required(TAP_ID, default=TAP_ID): str,
-            #vol.Required(NAME, default=NAME): str,
         }
 
         schema = vol.Schema(new_user_input)
