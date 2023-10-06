@@ -85,7 +85,7 @@ async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry)-> bool
         "vol_unit": vol_unit,
     }
     config_data = {
-        gw_ip: {
+        entry.unique_id: {
             "conf": conf
         }
     }
