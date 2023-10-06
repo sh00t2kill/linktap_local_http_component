@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import random
 
 import aiohttp
 import homeassistant.helpers.config_validation as cv
@@ -24,6 +25,8 @@ async def async_setup_entry(
     """Setup the sensor platform."""
     config_id = config.unique_id
     _LOGGER.debug(f"Configuring binary sensor entities for config {config_id}")
+    if config_id not in hass.data[DOMAIN]:
+        await asyncio.sleep(random.randint(1,3))
     taps = hass.data[DOMAIN][config_id]["conf"]["taps"]
     binary_sensors = []
     for tap in taps:
