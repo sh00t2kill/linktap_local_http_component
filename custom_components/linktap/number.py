@@ -74,7 +74,7 @@ class LinktapNumber(CoordinatorEntity, RestoreNumber):
             if self.number_suffix == "Watering Volume":
                 self._attr_native_value = DEFAULT_VOL
             else:
-                self._attr_native_value = DEFAULT_TIME / 60
+                self._attr_native_value = DEFAULT_TIME
         self.async_write_ha_state()
 
     @property
