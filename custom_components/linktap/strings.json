@@ -1,5 +1,5 @@
 {
-    "services" {
+    "services": {
         "pause": {
             "name": "Pause",
             "descrption": "Pause the watering",
