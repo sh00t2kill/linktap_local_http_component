@@ -2,7 +2,7 @@
     "services": {
         "pause": {
             "name": "Pause",
-            "descrption": "Pause the watering",
+            "description": "Pause the watering",
             "fields": {
                 "hours": {
                     "name": "Duration",
