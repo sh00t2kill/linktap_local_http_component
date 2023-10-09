@@ -20,7 +20,7 @@ pause:
   description: Pause the watering
   fields:
     hours:
-       name: Hours
+      name: Hours
       example: 1
       description: Duration in hours
   target:
