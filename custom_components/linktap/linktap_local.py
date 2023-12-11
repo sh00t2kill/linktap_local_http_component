@@ -7,8 +7,8 @@ from json.decoder import JSONDecodeError
 
 import aiohttp
 
-from .const import (CONFIG_CMD, DEFAULT_TIME, DISMISS_ALERT_CMD, START_CMD,
-                    STATUS_CMD, STOP_CMD)
+from .const import (CONFIG_CMD, DEFAULT_TIME, DISMISS_ALERT_CMD, PAUSE_CMD,
+                    START_CMD, STATUS_CMD, STOP_CMD)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -105,6 +105,18 @@ class LinktapLocal:
             "dev_id": dev_id,
         }
         status = await self._request(data)
+        return status["ret"] == 0
+
+    async def pause_tap(self, gw_id, dev_id, hours):
+        data = {
+            "cmd": PAUSE_CMD,
+            "gw_id": gw_id,
+            "dev_id": dev_id,
+            "duration": hours
+        }
+        _LOGGER.debug(f"Pause Payload: {data}")
+        status = await self._request(data)
+        _LOGGER.debug(f"Pause Response: {status}")
         return status["ret"] == 0
 
     async def get_gw_config(self, gw_id):

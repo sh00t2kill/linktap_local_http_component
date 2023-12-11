@@ -45,6 +45,7 @@ async def async_setup_entry(
         sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="failsafe_duration", unit="s", icon="mdi:clock"))
         sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="plan_mode", unit="mode", icon="mdi:note"))
         sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="plan_sn", unit="sn", icon="mdi:note"))
+        sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="plan_mode_string", unit="mode", icon="mdi:note"))
     async_add_entities(sensors, True)
 
 class LinktapSensor(CoordinatorEntity, SensorEntity):
@@ -78,6 +79,11 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
             model=tap[TAP_ID],
             configuration_url="http://" + tap[GW_IP] + "/"
         )
+#Modemode: watering mode (1 - Instant Mode, 2 - Calendar mode, 3 - 7 day mode, 4 - Odd-even mode, 5 -Interval mode, 6 - Month mode).
+    def translate_plan_mode(self, mode):
+        modes = ['NA', 'Instant', 'Calendar', '7-Day', 'Odd-Even', 'Interval', 'Month']
+        return modes[mode]
+
 
     @property
     def unique_id(self):
@@ -101,7 +107,10 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
         if not attributes:
             self._state = "unknown"
         else:
-            self._state = attributes[self.attribute]
+            if self.attribute == "plan_mode_string":
+                self._state = self.translate_plan_mode(attributes["plan_mode"])
+            else:
+                self._state = attributes[self.attribute]
 
         return self._state
 

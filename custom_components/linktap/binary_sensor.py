@@ -41,6 +41,7 @@ async def async_setup_entry(
         binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, data_attribute="is_broken", icon="mdi:scissors-cutting"))
         binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, data_attribute="is_manual_mode", icon="mdi:account-switch"))
         binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, data_attribute="is_watering", icon="mdi:water"))
+        binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, data_attribute="is_paused", icon="mdi:pause"))
     async_add_entities(binary_sensors, True)
 
     platform = entity_platform.async_get_current_platform()
@@ -94,8 +95,11 @@ class LinktapBinarySensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def state(self):
         attributes = self.coordinator.data
-        data_attr = attributes[self._data_check_attribute]
-        state = "on" if data_attr else "off"
+        if self._data_check_attribute in attributes:
+            data_attr = attributes[self._data_check_attribute]
+            state = "on" if data_attr else "off"
+        else:
+            state = "unknown"
         return state
 
     @property

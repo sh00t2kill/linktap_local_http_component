@@ -8,6 +8,7 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.const import STATE_UNKNOWN
+from homeassistant.helpers import entity_platform, service
 from homeassistant.helpers.entity import *
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -38,6 +39,12 @@ async def async_setup_entry(
         _LOGGER.debug(f"Configuring switch for tap {tap}")
         switches.append(LinktapSwitch(coordinator, hass, tap))
     async_add_entities(switches, True)
+
+    platform = entity_platform.async_get_current_platform()
+    platform.async_register_entity_service("pause",
+        {vol.Required("hours", default=1): vol.Coerce(int)},
+        "_pause_tap"
+        )
 
 class LinktapSwitch(CoordinatorEntity, SwitchEntity):
     def __init__(self, coordinator: DataUpdateCoordinator, hass, tap):
@@ -166,3 +173,11 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
     @property
     def device_info(self) -> DeviceInfo:
         return self._attr_device_info
+
+    async def _pause_tap(self, hours=False):
+        if not hours:
+            hours = 1
+        # Currently hard coding 1 hour for testing
+        _LOGGER.debug(f"Pausing {self.entity_id} for {hours} hours")
+        await self.tap_api.pause_tap(self._gw_id, self.tap_id, hours)
+        await self.coordinator.async_request_refresh()

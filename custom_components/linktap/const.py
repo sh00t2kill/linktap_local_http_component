@@ -4,6 +4,7 @@ START_CMD = 6
 STOP_CMD = 7
 CONFIG_CMD = 16
 DISMISS_ALERT_CMD = 10
+PAUSE_CMD = 18
 TAP_ID = "ID of Tap"
 GW_ID = "ID of Gateway"
 GW_IP = "Local IP Address of Gateway"
