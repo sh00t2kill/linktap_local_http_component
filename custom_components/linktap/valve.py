@@ -8,16 +8,13 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.switch import DOMAIN as SWITCH_DOMAIN
 from homeassistant.components.valve import ValveEntity, ValveEntityFeature
-from homeassistant.const import (
-    ATTR_ENTITY_ID,
-    CONF_ENTITY_ID,
-    SERVICE_TURN_OFF,
-    SERVICE_TURN_ON,
-    STATE_OFF,
-    STATE_ON,
-)
+from homeassistant.const import (ATTR_ENTITY_ID, CONF_ENTITY_ID,
+                                 SERVICE_TURN_OFF, SERVICE_TURN_ON, STATE_OFF,
+                                 STATE_ON)
 from homeassistant.core import callback
-from homeassistant.helpers import entity_platform, service, entity_registry as er
+from homeassistant.helpers import entity_platform, service
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import service
 from homeassistant.helpers.entity import *
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -29,8 +26,7 @@ from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
 
-from .const import (ATTR_STATE, DOMAIN, GW_IP,
-                    MANUFACTURER, NAME, TAP_ID)
+from .const import ATTR_STATE, DOMAIN, GW_IP, MANUFACTURER, NAME, TAP_ID
 
 
 async def async_setup_entry(
@@ -56,20 +52,15 @@ class LinktapValve(CoordinatorEntity, ValveEntity):
         super().__init__(coordinator)
         self._state = None
         self._name = tap[NAME]
-        #self._id = tap[TAP_ID]
         self.tap_id = tap[TAP_ID]
-        #self.tap_api = coordinator.tap_api
         self.platform = "valve"
         self.hass = hass
         self._attr_supported_features = ValveEntityFeature.OPEN | ValveEntityFeature.CLOSE
         self._attr_reports_position = False
         self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{self.tap_id}")
-        #self._attr_icon = "mdi:water-pump"
         self._attrs = {
             "data": self.coordinator.data,
             "switch": self.switch_entity,
-        #    "duration_entity": self.duration_entity,
-        #    "volume_entity": self.volume_entity
         }
         self._attr_device_info = DeviceInfo(
             identifiers={
@@ -94,27 +85,7 @@ class LinktapValve(CoordinatorEntity, ValveEntity):
         name = name.replace("-", "_")
         return f"switch.{DOMAIN}_{name}".lower()
 
-#    @property
-#    def duration_entity(self):
-#        name = self._name.replace(" ", "_")
-#        name = name.replace("-", "_")
-#        return f"number.{DOMAIN}_{name}_watering_duration".lower()
-
-#    @property
-#    def volume_entity(self):
-#        name = self._name.replace(" ", "_")
-#        name = name.replace("-", "_")
-#        return f"number.{DOMAIN}_{name}_watering_volume".lower()
-
     async def async_open_valve(self, **kwargs):
-        #duration = self.get_watering_duration()
-        #seconds = int(float(duration)) * 60
-        #volume = self.get_watering_volume()
-        #watering_volume = None
-        #if volume != DEFAULT_VOL:
-        #    watering_volume = volume
-        #gw_id = self.coordinator.get_gw_id()
-        #attributes = await self.tap_api.turn_on(gw_id, self.tap_id, seconds, self.get_watering_volume())
         """Open the valve."""
         await self.hass.services.async_call(
             SWITCH_DOMAIN,
@@ -124,8 +95,6 @@ class LinktapValve(CoordinatorEntity, ValveEntity):
             context=self._context,
         )
         await self.coordinator.async_request_refresh()
-        #self.control_result = await self.set_state(go="open")
-        #self.async_write_ha_state()
 
     async def async_close_valve(self, **kwargs):
         """Close valve."""
@@ -137,8 +106,6 @@ class LinktapValve(CoordinatorEntity, ValveEntity):
             context=self._context,
         )
         await self.coordinator.async_request_refresh()
-        #self.control_result = await self.set_state(go="close")
-        #self.async_write_ha_state()
 
     @property
     def extra_state_attributes(self):
@@ -161,12 +128,6 @@ class LinktapValve(CoordinatorEntity, ValveEntity):
     @property
     def state(self):
         status = self.coordinator.data
-        #self._attrs["data"] = status
-        #_LOGGER.debug(f"Switch Status: {status}")
-        #duration = self.get_watering_duration()
-        #_LOGGER.debug(f"Set duration:{duration}")
-        #volume = self.get_watering_volume()
-        #_LOGGER.debug(f"Set volume:{volume}")
         self._attrs[ATTR_STATE] = status[ATTR_STATE]
         state = "unknown"
         if status[ATTR_STATE]:
@@ -178,21 +139,12 @@ class LinktapValve(CoordinatorEntity, ValveEntity):
         return state
 
     @property
-    def is_closed(self):
-        return self.state() == "closed"
-
-    @property
-    def is_open(self):
-        return self.state() == "open"
-
-    @property
     def device_info(self) -> DeviceInfo:
         return self._attr_device_info
 
     async def _pause_tap(self, hours=False):
         if not hours:
             hours = 1
-        # Currently hard coding 1 hour for testing
         _LOGGER.debug(f"Pausing {self.entity_id} for {hours} hours")
         await self.tap_api.pause_tap(self._gw_id, self.tap_id, hours)
         await self.coordinator.async_request_refresh()
