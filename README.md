@@ -54,8 +54,12 @@ If both duration AND volume > 0, both duration AND volume are used, and tap will
 <p><strong>NOTE: WATER BY VOLUME IS CURRENTLY PENDING A NEW RELEASE FROM LINKTAP.</strong> Until this is released, the volume parameter will have no effect.</p>
 
 switch:<br/>
-The tap/valve itself.
+The tap controller itself.
 
+valve:<br/>
+A wrapper for the switch -- a valve for each tap
+
+Using the switch and the valve are functionally equivalent, and the entities should always remain in sync.
 
 
 As yet there is no support for controlling scheduling. The API does have support for this, but unless there is demand for it, this is likely more clunky to manage in Home Assistant than the native app.
