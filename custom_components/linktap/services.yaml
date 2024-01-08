@@ -17,7 +17,7 @@ dismiss_alerts:
 
 pause:
   name: Pause
-  description: Pause the watering
+  description: Pause the watering schedule
   fields:
     hours:
       name: Hours
@@ -27,3 +27,16 @@ pause:
     entity:
       integration: linktap
       domain: switch
+
+pause_valve:
+  name: Pause
+  description: Pause the watering schedule
+  fields:
+    hours:
+      name: Hours
+      example: 1
+      description: Duration in hours
+  target:
+    entity:
+      integration: linktap
+      domain: valve
