@@ -14,7 +14,6 @@ from homeassistant.helpers.update_coordinator import (CoordinatorEntity,
                                                       DataUpdateCoordinator)
 from homeassistant.util import slugify
 
-
 _LOGGER = logging.getLogger(__name__)
 
 from .const import DOMAIN, GW_ID, GW_IP, MANUFACTURER, NAME, TAP_ID
