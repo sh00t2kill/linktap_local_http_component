@@ -109,14 +109,7 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
         if not attributes:
             self._state = "unknown"
         else:
-            if self.attribute == "volume":
-                is_watering = attributes["is_watering"]
-                if is_watering:
-                    self._state = attributes[self.attribute]
-                else:
-                    _LOGGER.debug("Not currently watering :: override volume to 0")
-                    self._state = 0
-            elif self.attribute == "plan_mode_string":
+            if self.attribute == "plan_mode_string":
                 self._state = self.translate_plan_mode(attributes["plan_mode"])
             else:
                 self._state = attributes[self.attribute]
