@@ -54,8 +54,8 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
         self.attribute = data_attribute
         self.tap_id = tap[TAP_ID]
         self.tap_name = tap[NAME]
-        if data_attribute == "volume":
-            self.last_reset = dt_util.utcnow()
+        #if data_attribute == "volume":
+        #    self.last_reset = dt_util.utcnow()
         self.platform = "sensor"
         self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{data_attribute}_{self.tap_id}")
         self._attrs = {
@@ -101,7 +101,7 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
 
         attributes = self.coordinator.data
         _LOGGER.debug(f"Sensor state: {attributes}")
-
+        previous_state = self._state
         if not attributes:
             self._state = "unknown"
         else:
@@ -109,7 +109,7 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
                 self._state = self.translate_plan_mode(attributes["plan_mode"])
             else:
                 self._state = attributes[self.attribute]
-            if self.attribute == "volume" and self._state == 0:
+            if self.attribute == "volume" and self._state < previous_state:
                 self.last_reset = dt_util.utcnow()
 
         return self._state
