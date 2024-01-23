@@ -109,7 +109,7 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
                 self._state = self.translate_plan_mode(attributes["plan_mode"])
             else:
                 self._state = attributes[self.attribute]
-            if self.attribute == "volume":
+            if self.attribute == "volume" and self._state == 0:
                 self.last_reset = dt_util.utcnow()
 
         return self._state
