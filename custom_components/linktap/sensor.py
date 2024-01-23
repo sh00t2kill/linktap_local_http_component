@@ -5,6 +5,7 @@ import random
 
 import aiohttp
 import homeassistant.helpers.config_validation as cv
+import homeassistant.util.dt as dt_util
 import voluptuous as vol
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.entity import *
@@ -23,13 +24,7 @@ async def async_setup_entry(
     hass, config, async_add_entities, discovery_info=None
 ):
     """Setup the sensor platform."""
-    #config_id = config.unique_id
-    #_LOGGER.debug(f"Configuring sensor entities for config {config_id}")
-    #if config_id not in hass.data[DOMAIN]:
-    #    await asyncio.sleep(random.randint(1,3))
-    #taps = hass.data[DOMAIN][config_id]["conf"]["taps"]
     taps = hass.data[DOMAIN][config.entry_id]["conf"]["taps"]
-    #vol_unit = hass.data[DOMAIN][config_id]["conf"]["vol_unit"]
     vol_unit = hass.data[DOMAIN][config.entry_id]["conf"]["vol_unit"]
     sensors = []
     for tap in taps:
@@ -59,7 +54,8 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
         self.attribute = data_attribute
         self.tap_id = tap[TAP_ID]
         self.tap_name = tap[NAME]
-
+        if data_attribute == "volume":
+            self.last_reset = dt_util.utcnow()
         self.platform = "sensor"
         self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{data_attribute}_{self.tap_id}")
         self._attrs = {
@@ -113,6 +109,8 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
                 self._state = self.translate_plan_mode(attributes["plan_mode"])
             else:
                 self._state = attributes[self.attribute]
+            if self.attribute == "volume":
+                self.last_reset = dt_util.utcnow()
 
         return self._state
 
