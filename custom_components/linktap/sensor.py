@@ -12,6 +12,7 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import (CoordinatorEntity,
                                                       DataUpdateCoordinator)
 from homeassistant.util import slugify
+import homeassistant.util.dt as dt_util
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -59,7 +60,8 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
         self.attribute = data_attribute
         self.tap_id = tap[TAP_ID]
         self.tap_name = tap[NAME]
-
+        if data_attribute == "volume":
+            self.last_reset = dt_util.utcnow()
         self.platform = "sensor"
         self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{data_attribute}_{self.tap_id}")
         self._attrs = {
@@ -113,6 +115,8 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
                 self._state = self.translate_plan_mode(attributes["plan_mode"])
             else:
                 self._state = attributes[self.attribute]
+            if self.attribute == "volume":
+                self.last_reset = dt_util.utcnow()
 
         return self._state
 
