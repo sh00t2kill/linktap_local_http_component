@@ -152,9 +152,9 @@ class LinktapValve(CoordinatorEntity, ValveEntity):
         await self.coordinator.async_request_refresh()
 
     async def _start_watering(self, minutes=False):
-        if not minutes:
+        if not minutes or minutes == 0:
             minutes = 1439
-        _LOGGER.debug(f"Starting watering for {minutes} minutes")
+        _LOGGER.debug(f"Starting watering via service call for {minutes} minutes")
         await self.tap_api.turn_on(self._gw_id, self.tap_id, minutes)
         await self.coordinator.async_request_refresh()
 
