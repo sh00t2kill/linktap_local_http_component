@@ -44,6 +44,10 @@ async def async_setup_entry(
         {vol.Required("hours", default=1): vol.Coerce(int)},
         "_pause_tap"
         )
+    platform.async_register_entity_service("start_watering",
+        {vol.Required("minutes", default=1439): vol.Coerce(int)},
+        "_start_watering"
+        )
 
 class LinktapValve(CoordinatorEntity, ValveEntity):
     def __init__(self, coordinator: DataUpdateCoordinator, hass, tap):
@@ -146,3 +150,11 @@ class LinktapValve(CoordinatorEntity, ValveEntity):
         _LOGGER.debug(f"Pausing {self.entity_id} for {hours} hours")
         await self.tap_api.pause_tap(self._gw_id, self.tap_id, hours)
         await self.coordinator.async_request_refresh()
+
+    async def _start_watering(self, minutes=False):
+        if not minutes:
+            minutes = 1439
+        _LOGGER.debug(f"Starting watering for {minutes} minutes")
+        await self.tap_api.turn_on(self._gw_id, self.tap_id, minutes)
+        await self.coordinator.async_request_refresh()
+
