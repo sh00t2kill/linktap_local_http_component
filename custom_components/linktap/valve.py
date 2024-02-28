@@ -149,7 +149,7 @@ class LinktapValve(CoordinatorEntity, ValveEntity):
             hours = 1
         _LOGGER.debug(f"Pausing {self.entity_id} for {hours} hours")
         gw_id = self.coordinator.get_gw_id()
-        await self.tap_api.pause_tap(gw_id, self.tap_id, hours)
+        await self.coordinator.tap_api.pause_tap(gw_id, self.tap_id, hours)
         await self.coordinator.async_request_refresh()
 
     async def _start_watering(self, minutes=False):
@@ -157,5 +157,5 @@ class LinktapValve(CoordinatorEntity, ValveEntity):
             minutes = 1439
         _LOGGER.debug(f"Starting watering via service call for {minutes} minutes")
         gw_id = self.coordinator.get_gw_id()
-        await self.tap_api.turn_on(gw_id, self.tap_id, minutes)
+        await self.coordinator.tap_api.turn_on(gw_id, self.tap_id, minutes)
         await self.coordinator.async_request_refresh()
