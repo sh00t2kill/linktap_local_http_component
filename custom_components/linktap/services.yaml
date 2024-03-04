@@ -42,13 +42,13 @@ pause_valve:
       domain: valve
 
 start_watering:
-  name: Pause
+  name: Start Watering for X seconds
   description: Turn on a valve for a set time
   fields:
-    minutes:
-      name: Minutes
-      example: 1439
-      description: Duration in minutes
+    seconds:
+      name: Seconds
+      example: 900
+      description: Duration in seconds
   target:
     entity:
       integration: linktap
