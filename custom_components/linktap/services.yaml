@@ -42,7 +42,7 @@ pause_valve:
       domain: valve
 
 start_watering:
-  name: Pause
+  name: Start Watering
   description: Turn on a valve for a set time
   fields:
     minutes:
