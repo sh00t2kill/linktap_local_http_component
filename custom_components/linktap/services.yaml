@@ -4,7 +4,7 @@ dismiss_alert:
   description: Dismiss an alert
   target:
     entity:
-      integration: lintkap
+      integration: linktap
       domain: binary_sensor
 
 dismiss_alerts:
