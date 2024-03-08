@@ -45,7 +45,7 @@ async def async_setup_entry(
         "_pause_tap"
         )
     platform.async_register_entity_service("start_watering",
-        {vol.Required("minutes", default=1439): vol.Coerce(int)},
+        {vol.Required("seconds", default=9000): vol.Coerce(int)},
         "_start_watering"
         )
 
