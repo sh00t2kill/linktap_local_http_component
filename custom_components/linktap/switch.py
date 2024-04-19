@@ -84,12 +84,14 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
     def duration_entity(self):
         name = self._name.replace(" ", "_")
         name = name.replace("-", "_")
+        name = name.replace("/", "_")
         return f"number.{DOMAIN}_{name}_watering_duration".lower()
 
     @property
     def volume_entity(self):
         name = self._name.replace(" ", "_")
         name = name.replace("-", "_")
+        name = name.replace("/", "_")
         return f"number.{DOMAIN}_{name}_watering_volume".lower()
 
     async def async_turn_on(self, **kwargs):
