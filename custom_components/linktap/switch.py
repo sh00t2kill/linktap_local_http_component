@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import random
+import re
 
 import aiohttp
 import homeassistant.helpers.config_validation as cv
@@ -82,16 +83,12 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
 
     @property
     def duration_entity(self):
-        name = self._name.replace(" ", "_")
-        name = name.replace("-", "_")
-        name = name.replace("/", "_")
+        name = re.sub('[^0-9a-zA-Z]+', '_', self._name)
         return f"number.{DOMAIN}_{name}_watering_duration".lower()
 
     @property
     def volume_entity(self):
-        name = self._name.replace(" ", "_")
-        name = name.replace("-", "_")
-        name = name.replace("/", "_")
+        name = re.sub('[^0-9a-zA-Z]+', '_', self._name)
         return f"number.{DOMAIN}_{name}_watering_volume".lower()
 
     async def async_turn_on(self, **kwargs):
