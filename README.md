@@ -59,6 +59,12 @@ The tap controller itself.
 valve:<br/>
 A wrapper for the switch -- a valve for each tap
 
+
+<h1>FAQ</h1>
+Why don't my volume or speed values update? They always show 0.</br >
+Chances are you have a G1 device. The G1 devices do not have an inbuilt flow meter. To my knowledge there is no way to retrofit one within the linktap ecosystem.<br />
+https://www.link-tap.com/#!/faq/en/What-is-the-difference-between-the-G1S-and-G2S-water-timers
+
 Using the switch and the valve are functionally equivalent, and the entities should always remain in sync.
 
 
