@@ -77,4 +77,4 @@ There is also an attribute called `Default Time`. If the duration entity matches
 
 
 <b>What do I do if i have more than 1 gateway?</b><br />
-If you have more than 1 gateway, ensure the local HTTP API is enabled on each one, and set them up seperately via its IP address or hostname. The integration has been tested and is known to work with multiple gateways. There should be no limitation on how many gateways can be added, and in theory you should be able to add gateways that are connected to different linktap accounts, as long as they are directly accessible via HTTP.
+If you have more than 1 gateway, ensure the local HTTP API is enabled on each one, and set them up separately via its IP address or hostname. The integration has been tested and is known to work with multiple gateways. There should be no limitation on how many gateways can be added, and in theory you should be able to add gateways that are connected to different linktap accounts, as long as they are directly accessible via HTTP.
