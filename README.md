@@ -59,17 +59,18 @@ The tap controller itself.
 valve:<br/>
 A wrapper for the switch -- a valve for each tap
 
-
-<h1>FAQ</h1>
-Why don't my volume or speed values update? They always show 0.</br >
-Chances are you have a G1 device. The G1 devices do not have an inbuilt flow meter. To my knowledge there is no way to retrofit one within the linktap ecosystem.<br />
-https://www.link-tap.com/#!/faq/en/What-is-the-difference-between-the-G1S-and-G2S-water-timers
-
 Using the switch and the valve are functionally equivalent, and the entities should always remain in sync.
 
 
 As yet there is no support for controlling scheduling. The API does have support for this, but unless there is demand for it, this is likely more clunky to manage in Home Assistant than the native app.
 
-Why do my taps always water for 15 mins, rather than the value defined by the duration number entity?<br />
+
+<h1>FAQ</h1>
+<b></b>Why don't my volume or speed values update? They always show 0.</b></br >
+Chances are you have a G1 device. The G1 devices do not have an inbuilt flow meter. To my knowledge there is no way to retrofit one within the linktap ecosystem.<br />
+https://www.link-tap.com/#!/faq/en/What-is-the-difference-between-the-G1S-and-G2S-water-timers
+
+
+<b>Why do my taps always water for 15 mins, rather than the value defined by the duration number entity?</b><br />
 This is likely due to a mapping issue with the integration. Each switch has an attribute called `duration_entity`. This should match the entity created for duration. If not, please lodge an issue.<br /?
 There is also an attribute called `Default Time`. If the duration entity matches, and has been changed from the default, this should be set to `false`. If not, again please lodge an issue.
