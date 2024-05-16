@@ -69,3 +69,7 @@ Using the switch and the valve are functionally equivalent, and the entities sho
 
 
 As yet there is no support for controlling scheduling. The API does have support for this, but unless there is demand for it, this is likely more clunky to manage in Home Assistant than the native app.
+
+Why do my taps always water for 15 mins, rather than the value defined by the duration number entity?<br />
+This is likely due to a mapping issue with the integration. Each switch has an attribute called `duration_entity`. This should match the entity created for duration. If not, please lodge an issue.<br /?
+There is also an attribute called `Default Time`. If the duration entity matches, and has been changed from the default, this should be set to `false`. If not, again please lodge an issue.
