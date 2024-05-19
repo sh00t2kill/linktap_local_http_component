@@ -16,8 +16,6 @@ from homeassistant.helpers import entity_platform
 from homeassistant.helpers.entity import *
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-#from homeassistant.helpers.event import EventStateChangedData
-#from homeassistant.helpers.typing import EventType
 from homeassistant.helpers.update_coordinator import (CoordinatorEntity,
                                                       DataUpdateCoordinator)
 from homeassistant.util import slugify
