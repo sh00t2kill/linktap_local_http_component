@@ -11,13 +11,11 @@ from homeassistant.components.valve import ValveEntity, ValveEntityFeature
 from homeassistant.const import (ATTR_ENTITY_ID, CONF_ENTITY_ID,
                                  SERVICE_TURN_OFF, SERVICE_TURN_ON, STATE_OFF,
                                  STATE_ON)
-from homeassistant.core import callback
+from homeassistant.core import Event, EventStateChangedData, callback
 from homeassistant.helpers import entity_platform
 from homeassistant.helpers.entity import *
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.event import EventStateChangedData
-from homeassistant.helpers.typing import EventType
 from homeassistant.helpers.update_coordinator import (CoordinatorEntity,
                                                       DataUpdateCoordinator)
 from homeassistant.util import slugify
@@ -115,7 +113,7 @@ class LinktapValve(CoordinatorEntity, ValveEntity):
 
     @callback
     def async_state_changed_listener(
-        self, event: EventType[EventStateChangedData] | None = None
+        self, event: Event[EventStateChangedData] | None = None
     ) -> None:
         """Handle child updates."""
         super().async_state_changed_listener(event)
