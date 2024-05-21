@@ -68,7 +68,7 @@ As yet there is no support for controlling scheduling. The API does have support
 <h1>FAQ</h1>
 <b>Why don't my volume or speed values update? They always show 0.</b></br >
 Chances are you have a G1 device. The G1 devices do not have an inbuilt flow meter. To my knowledge there is no way to retrofit one within the linktap ecosystem.<br />
-https://www.link-tap.com/#!/faq/en/What-is-the-difference-between-the-G1S-and-G2S-water-timers
+https://www.link-tap.com/#!/faq/en/What-is-the-difference-between-the-G1S-and-G2S-water-timers<br /><br />
 
 
 <b>Why do my taps always water for 15 mins, rather than the value defined by the duration number entity?</b><br />
