@@ -72,9 +72,9 @@ https://www.link-tap.com/#!/faq/en/What-is-the-difference-between-the-G1S-and-G2
 
 
 <b>Why do my taps always water for 15 mins, rather than the value defined by the duration number entity?</b><br />
-This is likely due to a mapping issue with the integration. Each switch has an attribute called `duration_entity`. This should match the entity created for duration. If not, please lodge an issue.<br /?
-There is also an attribute called `Default Time`. If the duration entity matches, and has been changed from the default, this should be set to `false`. If not, again please lodge an issue.
-
+This is likely due to a mapping issue with the integration. Each switch has an attribute called `duration_entity`. This should match the entity created for duration. If not, please lodge an issue.<br />
+There is also an attribute called `Default Time`. If the duration entity matches, and has been changed from the default, this should be set to `false`. If not, again please lodge an issue. <br />
+This can also occur if you have renamed entities, as it uses some fuzzy logic name matching in order to get the duration. If you have renamed entities in HA, delete the integration, change the names as desired in the Linktap app, and re-add the integration again. <br />
 
 <b>What do I do if i have more than 1 gateway?</b><br />
 If you have more than 1 gateway, ensure the local HTTP API is enabled on each one, and set them up separately via its IP address or hostname. The integration has been tested and is known to work with multiple gateways. There should be no limitation on how many gateways can be added, and in theory you should be able to add gateways that are connected to different linktap accounts, as long as they are directly accessible via HTTP.
