@@ -61,14 +61,6 @@ class LinktapLocal:
         if response.find("404") != -1:
             _LOGGER.debug("Got a 404 issue: Wait and try again")
             raise JSONDecodeError("404 Not Found")
-        
-        #    await asyncio.sleep(random.randint(1,3))
-        #    response = await self._make_request(url, data, headers)
-        #try:
-        ##    jsonresp = json.loads(self.clean_response(response))
-        #except JSONDecodeError:
-        #    response = await self._make_request(url, data, headers)
-        #    jsonresp = json.loads(self.clean_response(response))
         jsonresp = json.loads(self.clean_response(response))
         return jsonresp
 
