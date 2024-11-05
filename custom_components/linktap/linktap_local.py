@@ -4,6 +4,7 @@ import logging
 import random
 import re
 from json.decoder import JSONDecodeError
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 import aiohttp
 
@@ -41,6 +42,12 @@ class LinktapLocal:
         cleaned_text = cleaned_text.replace("api", "")
         return cleaned_text.strip()
 
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=4),
+        retry=retry_if_exception_type(JSONDecodeError)
+    )
     async def _request(self, data):
 
         headers = {
@@ -53,13 +60,16 @@ class LinktapLocal:
         # Ive never seen it fail twice, so lets try it again.
         if response.find("404") != -1:
             _LOGGER.debug("Got a 404 issue: Wait and try again")
-            await asyncio.sleep(random.randint(1,3))
-            response = await self._make_request(url, data, headers)
-        try:
-            jsonresp = json.loads(self.clean_response(response))
-        except JSONDecodeError:
-            response = await self._make_request(url, data, headers)
-            jsonresp = json.loads(self.clean_response(response))
+            raise JSONDecodeError("404 Not Found")
+        
+        #    await asyncio.sleep(random.randint(1,3))
+        #    response = await self._make_request(url, data, headers)
+        #try:
+        ##    jsonresp = json.loads(self.clean_response(response))
+        #except JSONDecodeError:
+        #    response = await self._make_request(url, data, headers)
+        #    jsonresp = json.loads(self.clean_response(response))
+        jsonresp = json.loads(self.clean_response(response))
         return jsonresp
 
     async def _make_request(self, url, data, headers):

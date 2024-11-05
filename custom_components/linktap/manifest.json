@@ -7,6 +7,6 @@
     "documentation": "https://github.com/sh00t2kill/linktap_local_http_component",
     "iot_class": "local_push",
     "issue_tracker": "https://github.com/sh00t2kill/linktap_local_http_component",
-    "requirements": [],
+    "requirements": ["tenacity"],
     "version": "0.1.0"
   }
