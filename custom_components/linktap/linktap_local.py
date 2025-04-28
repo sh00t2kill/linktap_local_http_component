@@ -87,7 +87,7 @@ class LinktapLocal:
 
     async def turn_on(self, gw_id, dev_id, seconds=None, volume=None):
         if (not seconds or seconds == 0) and not volume:
-            seconds = DEFAULT_TIME
+            seconds = DEFAULT_TIME * 60
         data = {
             "cmd": START_CMD,
             "gw_id": gw_id,
