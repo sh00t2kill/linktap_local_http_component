@@ -94,10 +94,6 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
     async def async_turn_on(self, **kwargs):
         duration = self.get_watering_duration()
         seconds = int(float(duration)) * 60
-        #volume = self.get_watering_volume()
-        #watering_volume = None
-        #if volume != DEFAULT_VOL:
-        #    watering_volume = volume
         gw_id = self.coordinator.get_gw_id()
         attributes = await self.tap_api.turn_on(gw_id, self.tap_id, seconds, self.get_watering_volume())
         await self.coordinator.async_request_refresh()
@@ -141,7 +137,7 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
             volume = entity.state
             self._attrs[ATTR_VOL] = True
         self._attrs[ATTR_VOLUME] = volume
-        return volume
+        return float(volume)
 
     @property
     def extra_state_attributes(self):
