@@ -11,32 +11,39 @@ A device is created for each tap found. Multi-valve TapLinkers or ValveLinkers w
 
 For each device, multiple entities are created:<br>
 binary sensors:
-<ul>
-<li>Is Linked</li>
-<li>Has a fall alert</li>
-<li>Has a cutoff alert</li>
-<li>Is leaking</li>
-<li>Is clogged</li>
-<li>Is broken</li>
-</ul>
+
+| Binary Sensor Name       | Description (if applicable)                           |
+|--------------------------|-------------------------------------------------------|
+| Is Linked               | Is the tap linked to the gateway?                     |
+| Has a fall alert        | Has an alert been raised due to a detected fall?      |
+| Has a cutoff alert      | Has something happened to the tap and it failed to shut off? |
+| Is leaking              | Has the tap detected a leak?                          |
+| Is clogged              | Has the tap detected it is clogged?                   |
+| Is broken               | Is the tap in an otherwise broken state?              |
+| Is Manual Mode          | Has the tap been triggered manually (via physical button)? |
+| Is Paused               | Has the tap been paused?                              |
+| Is Watering             | Is the tap currently watering?                        |
+
 
 Binary sensors also have some services registered:<br/>
 dismiss_alerts: dismiss all alerts<br/>
 dismiss_alert: dismisses a single alert. Takes an entity ID of one of the binary sensors.
 
 sensors:
-<ul>
-<li>Signal Strength</li>
-<li>Battery</li>
-<li>Total Duration</li>
-<li>Remaining Duration</li>
-<li>Speed</li>
-<li>Volume</li>
-<li>Volume Limit</li>
-<li>Failsafe Duration</li>
-<li>Plan Mode</li>
-<li>Plan SN</li>
-</ul>
+
+| Sensor Name           | Description (if applicable) |
+|-----------------------|-----------------------------|
+| Signal               | Strength of the signal between the tap and gateway |
+| Battery              | Battery level of the tap device |
+| Total Duration       | Watering duration of the current watering job |
+| Remain Duration      | Remaining watering duration, of the current watering job|
+| Speed                | Water flow speed |
+| Volume               | Total water volume used for the current watering job. Resets to 0 upon completion to support the energy dashboard |
+| Volume Limit         | The volume limit set on the current watering job |
+| Failsafe Duration    | The failsafe duration set for the tap - This is not configurable via this integration. |
+| Plan Mode            | Current watering plan mode. A numerical identifier. |
+| Plan Mode String     | A translation of the plan mode into the terms matching the app |
+| Plan SN              | Serial number of the watering plan. A numerical identifier. |
 
 number:
 <ul>
