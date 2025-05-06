@@ -12,7 +12,7 @@ A device is created for each tap found. Multi-valve TapLinkers or ValveLinkers w
 For each device, multiple entities are created:<br>
 binary sensors:
 
-| Binary Sensor Name       | Description  | 
+| Binary Sensor Name       | Description  |
 |--------------------------|-------------------------------------------------------|
 | Is Linked               | Is the tap linked to the gateway?                     |
 | Has a fall alert        | Has an alert been raised due to a detected fall?      |
