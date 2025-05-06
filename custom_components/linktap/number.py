@@ -46,11 +46,11 @@ class LinktapNumber(CoordinatorEntity, RestoreNumber):
         self.platform = "number"
         self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{self.tap_id}_{number_suffix.replace(' ', '_')}")
         self._attr_native_min_value = 0
+        self._attr_native_max_value = 120
+        self._attr_native_step = 5
         if number_suffix == "Watering Volume":
             self._attr_native_max_value = 2000
             self._attr_native_step = 10
-        self._attr_native_max_value = 120
-        self._attr_native_step = 5
         self._attr_native_unit_of_measurement = unit_of_measurement#"m"
         self._attr_icon = icon#"mdi:clock"
         self.number_suffix = number_suffix
