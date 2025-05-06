@@ -29,6 +29,8 @@ Binary sensors also have some services registered:<br/>
 dismiss_alerts: dismiss all alerts<br/>
 dismiss_alert: dismisses a single alert. Takes an entity ID of one of the binary sensors.
 
+Other than the alerts, the binary sensors are information about a tap, and are not controlled by the integration.
+
 sensors:
 
 | Sensor Name           | Description  |
@@ -60,7 +62,15 @@ If both duration AND volume > 0, both duration AND volume are used, and tap will
 
 
 switch:<br/>
-The tap controller itself.
+The tap controller itself. The switch has a number of attributes. In general these can be ignored, as they have matching sensors and binary_sensors, but are helpful in debugging.
+
+There are 3 additional attributes set by the intergration itself.
+
+| Attribute Name           | Description  |
+|-----------------------|-----------------------------|
+| Duration Entity   | The entity the integration is using to control duration |
+| Default time | Is the time being sent set to the default? This wil be true if either the number entity has never been changed, OR if the number enttiy cannot be found (eg because its been renamed -- dont do this!) |
+| Watering by Volume | Has a volume value been sent to the api when the switch/value was turned on |
 
 valve:<br/>
 A wrapper for the switch -- a valve for each tap
