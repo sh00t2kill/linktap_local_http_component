@@ -12,7 +12,7 @@ A device is created for each tap found. Multi-valve TapLinkers or ValveLinkers w
 For each device, multiple entities are created:<br>
 binary sensors:
 
-| Binary Sensor Name       | Description (if applicable)                           |
+| Binary Sensor Name       | Description  | 
 |--------------------------|-------------------------------------------------------|
 | Is Linked               | Is the tap linked to the gateway?                     |
 | Has a fall alert        | Has an alert been raised due to a detected fall?      |
@@ -31,15 +31,15 @@ dismiss_alert: dismisses a single alert. Takes an entity ID of one of the binary
 
 sensors:
 
-| Sensor Name           | Description (if applicable) |
+| Sensor Name           | Description  |
 |-----------------------|-----------------------------|
 | Signal               | Strength of the signal between the tap and gateway |
 | Battery              | Battery level of the tap device |
-| Total Duration       | Watering duration of the current watering job |
+| Total Duration       | Watering duration of the current watering job. Should match the number entity, converted to seconds. |
 | Remain Duration      | Remaining watering duration, of the current watering job|
 | Speed                | Water flow speed |
 | Volume               | Total water volume used for the current watering job. Resets to 0 upon completion to support the energy dashboard |
-| Volume Limit         | The volume limit set on the current watering job |
+| Volume Limit         | The volume limit set on the current watering job. Should match the number entity if set. |
 | Failsafe Duration    | The failsafe duration set for the tap - This is not configurable via this integration. |
 | Plan Mode            | Current watering plan mode. A numerical identifier. |
 | Plan Mode String     | A translation of the plan mode into the terms matching the app |
