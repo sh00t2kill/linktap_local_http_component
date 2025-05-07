@@ -11,32 +11,41 @@ A device is created for each tap found. Multi-valve TapLinkers or ValveLinkers w
 
 For each device, multiple entities are created:<br>
 binary sensors:
-<ul>
-<li>Is Linked</li>
-<li>Has a fall alert</li>
-<li>Has a cutoff alert</li>
-<li>Is leaking</li>
-<li>Is clogged</li>
-<li>Is broken</li>
-</ul>
+
+| Binary Sensor Name       | Description  |
+|--------------------------|-------------------------------------------------------|
+| Is Linked               | Is the tap linked to the gateway?                     |
+| Has a fall alert        | Has an alert been raised due to a detected fall?      |
+| Has a cutoff alert      | Has something happened to the tap and it failed to shut off? |
+| Is leaking              | Has the tap detected a leak?                          |
+| Is clogged              | Has the tap detected it is clogged?                   |
+| Is broken               | Is the tap in an otherwise broken state?              |
+| Is Manual Mode          | Has the tap been triggered manually (via physical button)? |
+| Is Paused               | Has the tap been paused?                              |
+| Is Watering             | Is the tap currently watering?                        |
+
 
 Binary sensors also have some services registered:<br/>
 dismiss_alerts: dismiss all alerts<br/>
 dismiss_alert: dismisses a single alert. Takes an entity ID of one of the binary sensors.
 
+Other than the alerts, the binary sensors are information about a tap, and are not controlled by the integration.
+
 sensors:
-<ul>
-<li>Signal Strength</li>
-<li>Battery</li>
-<li>Total Duration</li>
-<li>Remaining Duration</li>
-<li>Speed</li>
-<li>Volume</li>
-<li>Volume Limit</li>
-<li>Failsafe Duration</li>
-<li>Plan Mode</li>
-<li>Plan SN</li>
-</ul>
+
+| Sensor Name           | Description  |
+|-----------------------|-----------------------------|
+| Signal               | Strength of the signal between the tap and gateway |
+| Battery              | Battery level of the tap device |
+| Total Duration       | Watering duration of the current watering job. Should match the number entity, converted to seconds. |
+| Remain Duration      | Remaining watering duration, of the current watering job|
+| Speed                | Water flow speed |
+| Volume               | Total water volume used for the current watering job. Resets to 0 upon completion to support the energy dashboard |
+| Volume Limit         | The volume limit set on the current watering job. Should match the number entity if set. |
+| Failsafe Duration    | The failsafe duration set for the tap - This is not configurable via this integration. |
+| Plan Mode            | Current watering plan mode. A numerical identifier. |
+| Plan Mode String     | A translation of the plan mode into the terms matching the app |
+| Plan SN              | Serial number of the watering plan. A numerical identifier. |
 
 number:
 <ul>
@@ -53,7 +62,15 @@ If both duration AND volume > 0, both duration AND volume are used, and tap will
 
 
 switch:<br/>
-The tap controller itself.
+The tap controller itself. The switch has a number of attributes. In general these can be ignored, as they have matching sensors and binary_sensors, but are helpful in debugging.
+
+There are 3 additional attributes set by the integration itself.
+
+| Attribute Name           | Description  |
+|-----------------------|-----------------------------|
+| Duration Entity   | The entity the integration is using to control duration |
+| Default time | Is the time being sent set to the default? This will be true if either the number entity has never been changed, OR if the number enttiy cannot be found (eg because its been renamed -- dont do this!) |
+| Watering by Volume | Has a volume value been sent to the api when the switch/value was turned on |
 
 valve:<br/>
 A wrapper for the switch -- a valve for each tap
