@@ -9,6 +9,14 @@ It requires just the configuration IP of your gateway. If you have more than 1 g
 A device is created for each tap found. Multi-valve TapLinkers or ValveLinkers will get a device created for each output.
 <br><b>Note:</b> version `x060820` (x is S or G, indicating that the firmware belongs to GW-01 or GW-02, respectively) is required on your Linktap Gateway in order for this component to work.
 
+<b>How do I use this integration?</b>
+If you want to water by duration, and not volume:<br/>
+  Set volume number entity to 0, set required duration entity to your desired time in minutes. Turn on switch/valve<br/>
+If you want to water by volume, and not duration<br/>
+  Set duration entity to its max number (120), set the volume you desire. Turn on switch/valve. (Note, if it matches 120 minutes first, it will turn off, as duration is required.)<br/>
+If you want to order by duration OR volume.<br/>
+  Set both the duration entity to your desired time, and the volume to your desired volume. Turn on switch/valve. It will turn off when it hits the first defined threshold.<br/>
+
 For each device, multiple entities are created:<br>
 binary sensors:
 
