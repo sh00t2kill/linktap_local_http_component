@@ -1,5 +1,6 @@
 A custom component for linktap tap and watering valve controllers.
 
+Install this Integration via the Home Assistant Community Store (HACS)
 
 Linktap already have an MQTT implementation, but for home assistant users its support is rudimentary. They have a more advanced mode of operation via MQTT, but it involves complicated manual setup of switches and sensors.
 This custom component replaces both of those mechanisms, and uses the locally available HTTP API.
@@ -11,12 +12,8 @@ A device is created for each tap found. Multi-valve TapLinkers or ValveLinkers w
 
 <b>How do I use this integration?</b>
 <p>
-If you want to water by duration, and not volume:<br/>
-  Set volume number entity to 0, set required duration entity to your desired time in minutes. Turn on switch/valve<br/>
-If you want to water by volume, and not duration<br/>
-  Set duration entity to its max number (120), set the volume you desire. Turn on switch/valve. (Note, if it matches 120 minutes first, it will turn off, as duration is required.)<br/>
-If you want to order by duration OR volume.<br/>
-  Set both the duration entity to your desired time, and the volume to your desired volume. Turn on switch/valve. It will turn off when it hits the first defined threshold.<br/>
+Set the Watering Volume number entity and the Watering Duration number entity to your desired limits, and turn on the switch/valve. Whichever value is reached first will turn the switch/valve off. <br/>
+If you set the Watering Volume to 0, then the setting is ignored and the switch/valve will turn off when the Watering Duration is reached.
 </p>
 For each device, multiple entities are created:<br>
 binary sensors:
@@ -61,13 +58,10 @@ number:
 <li>Watering Duration (Defaults to 15 minutes)</li>
 <li>Watering Volume (Defaults to 0)</li>
 </ul>
-<p><strong>Note:</strong>The volume unit is pulled from the gateway. It can either be in L or Gal.</p>
+<p><strong>Note:</strong> The volume unit is pulled from the gateway. It can either be in L or Gal.</p>
 
-These control the watering time and volume, when the switch for a tap is turned on.<br/>
-If duration is 0 AND volume is 0, default time is applied (currently 15 mins)<br/>
-If duration is 0 AND volume is >0, water by volume is used<br/>
-If duration > 0 AND volume is 0, water by duration is used<br/>
-If both duration AND volume > 0, both duration AND volume are used, and tap will turn off when either is reached<br/>
+These control the watering time and volume, when the switch for a tap is turned on <strong>by Home Assistant</strong> (ignored if the manual button on LinkTap device is used).<br/>
+The water will turn off when either the Watering Duration or Watering Volume is reached (whichever comes first), unless the Watering Volume is set to 0, in which case it is ignored and only Watering Duration is considered.
 
 
 switch:<br/>
