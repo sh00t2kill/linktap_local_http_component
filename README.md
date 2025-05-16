@@ -62,7 +62,7 @@ number:
 </ul>
 <p><strong>Note:</strong> The volume unit is pulled from the gateway. It can either be in L or Gal.</p>
 
-These control the watering time and volume, when the switch for a tap is turned on <strong>by Home Assistant</strong> (ignored if the manual button on LinkTap device is used).<br/>
+These control the watering time and volume, when the switch for a tap is turned on <strong>by Home Assistant</strong> (ignored if ANY OTHER mechanism is used to start watering, iethe manual button, the mobile app, or MQTT).<br/>
 The water will turn off when either the Watering Duration or Watering Volume is reached (whichever comes first), unless the Watering Volume is set to 0, in which case it is ignored and only Watering Duration is considered.
 
 
