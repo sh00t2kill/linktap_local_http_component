@@ -82,14 +82,14 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
         return f"{MANUFACTURER} {self._name}"
 
     @property
-    def duration_entity(self):
-        name = re.sub('[^0-9a-zA-Z]+', '_', self._name)
-        return f"number.{DOMAIN}_{name}_watering_duration".lower()
+    def duration_entity(self) -> str:
+        slug = slugify(self._name)  # HA-native conversion
+        return f"number.{DOMAIN}_{slug}_watering_duration"
 
     @property
-    def volume_entity(self):
-        name = re.sub('[^0-9a-zA-Z]+', '_', self._name)
-        return f"number.{DOMAIN}_{name}_watering_volume".lower()
+    def volume_entity(self) -> str:
+        slug = slugify(self._name)
+        return f"number.{DOMAIN}_{slug}_watering_volume"
 
     async def async_turn_on(self, **kwargs):
         duration = self.get_watering_duration()
