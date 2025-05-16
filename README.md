@@ -5,6 +5,8 @@ Install this Integration via the Home Assistant Community Store (HACS)
 Linktap already have an MQTT implementation, but for home assistant users its support is rudimentary. They have a more advanced mode of operation via MQTT, but it involves complicated manual setup of switches and sensors.
 This custom component replaces both of those mechanisms, and uses the locally available HTTP API.
 
+In short, its designed to replicate the "Instant Watering" functionalty of the Linktapp app. Ie `water for x minutes`, or `until y volume is reached`.
+
 It requires just the configuration IP of your gateway. If you have more than 1 gateway, you can setup multiple instances of the integration.
 
 A device is created for each tap found. Multi-valve TapLinkers or ValveLinkers will get a device created for each output.
