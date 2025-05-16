@@ -5,7 +5,7 @@ Install this Integration via the Home Assistant Community Store (HACS)
 Linktap already have an MQTT implementation, but for home assistant users its support is rudimentary. They have a more advanced mode of operation via MQTT, but it involves complicated manual setup of switches and sensors.
 This custom component replaces both of those mechanisms, and uses the locally available HTTP API.
 
-In short, its designed to replicate the "Instant Watering" functionalty of the Linktapp app. Ie `water for x minutes`, or `until y volume is reached`.
+In short, its designed to replicate the "Instant Watering" functionality of the Linktapp app. Ie `water for x minutes`, or `until y volume is reached`.
 
 It requires just the configuration IP of your gateway. If you have more than 1 gateway, you can setup multiple instances of the integration.
 
@@ -62,7 +62,7 @@ number:
 </ul>
 <p><strong>Note:</strong> The volume unit is pulled from the gateway. It can either be in L or Gal.</p>
 
-These control the watering time and volume, when the switch for a tap is turned on <strong>by Home Assistant</strong> (ignored if the manual button on LinkTap device is used).<br/>
+These control the watering time and volume, when the switch for a tap is turned on <strong>by Home Assistant</strong> (ignored if ANY OTHER mechanism is used to start watering, iethe manual button, the mobile app, or MQTT).<br/>
 The water will turn off when either the Watering Duration or Watering Volume is reached (whichever comes first), unless the Watering Volume is set to 0, in which case it is ignored and only Watering Duration is considered.
 
 
