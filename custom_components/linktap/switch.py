@@ -172,7 +172,7 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
     async def _pause_tap(self, hours=False):
         if not hours:
             hours = 1
-        # Currently hard coding 1 hour for testing
         _LOGGER.debug(f"Pausing {self.entity_id} for {hours} hours")
-        await self.tap_api.pause_tap(self._gw_id, self.tap_id, hours)
+        gw_id = self.coordinator.get_gw_id()
+        await self.tap_api.pause_tap(gw_id, self.tap_id, hours)
         await self.coordinator.async_request_refresh()
