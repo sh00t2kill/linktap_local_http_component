@@ -28,11 +28,12 @@ async def async_setup_entry(
     taps = hass.data[DOMAIN][config.entry_id]["conf"]["taps"]
     numbers = []
     for tap in taps:
-        """For each tap, we set a number for duration and volume"""
+        """For each tap, we set a number for duration, volume, and pause duration"""
         _LOGGER.debug(f"Configuring numbers for tap {tap}")
-        coordinator = coordinator = tap["coordinator"]
+        coordinator = tap["coordinator"]
         numbers.append(LinktapNumber(coordinator, hass, tap, "Watering Duration", "mdi:clock", "m"))
         numbers.append(LinktapNumber(coordinator, hass, tap, "Watering Volume", "mdi:water", hass.data[DOMAIN][config.entry_id]["conf"]["vol_unit"]))
+        numbers.append(LinktapPauseDurationNumber(coordinator, hass, tap, "Pause Duration", "mdi:timer-pause", "h"))
 
     async_add_entities(numbers, True)
 
@@ -98,6 +99,63 @@ class LinktapNumber(CoordinatorEntity, RestoreNumber):
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""
+        self._attr_native_value = value
+        self.async_write_ha_state()
+        await self.coordinator.async_request_refresh()
+
+class LinktapPauseDurationNumber(CoordinatorEntity, RestoreNumber):
+    def __init__(self, coordinator: DataUpdateCoordinator, hass, tap, number_suffix, icon, unit_of_measurement):
+        super().__init__(coordinator)
+        self._state = None
+        self._name = tap[NAME]
+        self.tap_id = tap[TAP_ID]
+        self.platform = "number"
+        self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{self.tap_id}_pause_duration")
+        self._attr_native_min_value = 1
+        self._attr_native_max_value = 96
+        self._attr_native_step = 1
+        self._attr_native_unit_of_measurement = unit_of_measurement
+        self._attr_icon = icon
+        self.number_suffix = number_suffix
+        self._attr_device_info = DeviceInfo(
+            identifiers={
+                (DOMAIN, tap[TAP_ID])
+            },
+            name=tap[NAME],
+            manufacturer=MANUFACTURER,
+            model=tap[TAP_ID],
+            configuration_url="http://" + tap[GW_IP] + "/"
+        )
+        self._attrs = {}
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        restored_number = await self.async_get_last_number_data()
+        if restored_number is not None and restored_number.native_value != STATE_UNKNOWN:
+            _LOGGER.debug(f"Restoring pause duration value to {restored_number.native_value}")
+            self._attr_native_value = restored_number.native_value
+        else:
+            _LOGGER.debug(f"No pause duration value found to restore -- setting default to 24")
+            self._attr_native_value = 24
+        self.async_write_ha_state()
+
+    @property
+    def unique_id(self):
+        return self._attr_unique_id
+
+    @property
+    def extra_state_attributes(self):
+        return self._attrs
+
+    @property
+    def name(self):
+        return f"{MANUFACTURER} {self._name} Pause Duration"
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return self._attr_device_info
+
+    async def async_set_native_value(self, value: float) -> None:
         self._attr_native_value = value
         self.async_write_ha_state()
         await self.coordinator.async_request_refresh()

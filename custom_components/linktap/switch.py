@@ -177,6 +177,7 @@ class LinktapPauseSwitch(CoordinatorEntity, SwitchEntity):
     def __init__(self, coordinator: DataUpdateCoordinator, hass, tap):
         super().__init__(coordinator)
         self._name = f"Pause {tap[NAME]}"
+        self.tap_name = tap[NAME]  # Store original tap name for correct slug
         self.tap_id = tap[TAP_ID]
         self.platform = "switch"
         self.hass = hass
@@ -202,6 +203,11 @@ class LinktapPauseSwitch(CoordinatorEntity, SwitchEntity):
         return self._name
 
     @property
+    def pause_duration_entity(self) -> str:
+        slug = slugify(self.tap_name)  # Use original tap name, not self._name
+        return f"number.{DOMAIN}_{slug}_pause_duration"
+
+    @property
     def is_on(self):
         status = self.coordinator.data
         return bool(status.get("is_paused", False))
@@ -211,7 +217,16 @@ class LinktapPauseSwitch(CoordinatorEntity, SwitchEntity):
         return self._attrs
 
     async def async_turn_on(self, **kwargs):
-        await self._pause_tap(hours=24)  # Default to 24 hours pause
+        hours = 24
+        _LOGGER.debug(f"PauseSwitch: Looking for {self.pause_duration_entity}")
+        entity = self.hass.states.get(self.pause_duration_entity)
+        if entity and entity.state not in (None, "unknown"):
+            _LOGGER.debug(f"PauseSwitch: Found pause duration entity {self.pause_duration_entity} with state {entity.state}")
+            try:
+                hours = int(float(entity.state))
+            except Exception as e:
+                _LOGGER.warning(f"PauseSwitch: Could not parse pause duration, using default 1: {e}")
+        await self._pause_tap(hours=hours)
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs):
