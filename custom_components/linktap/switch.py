@@ -28,17 +28,13 @@ async def async_setup_entry(
     hass, config, async_add_entities, discovery_info=None
 ):
     """Setup the switch platform."""
-    #config_id = config.unique_id
-    #_LOGGER.debug(f"Configuring switch entities for config {config_id}")
-    #if config_id not in hass.data[DOMAIN]:
-    #    await asyncio.sleep(random.randint(1,3))
-    #taps = hass.data[DOMAIN][config_id]["conf"]["taps"]
     taps = hass.data[DOMAIN][config.entry_id]["conf"]["taps"]
     switches = []
     for tap in taps:
         coordinator = tap["coordinator"]
         _LOGGER.debug(f"Configuring switch for tap {tap}")
         switches.append(LinktapSwitch(coordinator, hass, tap))
+        switches.append(LinktapPauseSwitch(coordinator, hass, tap))
     async_add_entities(switches, True)
 
     platform = entity_platform.async_get_current_platform()
@@ -176,3 +172,53 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
         gw_id = self.coordinator.get_gw_id()
         await self.tap_api.pause_tap(gw_id, self.tap_id, hours)
         await self.coordinator.async_request_refresh()
+
+class LinktapPauseSwitch(CoordinatorEntity, SwitchEntity):
+    def __init__(self, coordinator: DataUpdateCoordinator, hass, tap):
+        super().__init__(coordinator)
+        self._name = f"Pause {tap[NAME]}"
+        self.tap_id = tap[TAP_ID]
+        self.platform = "switch"
+        self.hass = hass
+        self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{self.tap_id}_pause")
+        self._attr_icon = "mdi:pause-circle"
+        self._attr_device_info = DeviceInfo(
+            identifiers={
+                (DOMAIN, tap[TAP_ID])
+            },
+            name=tap[NAME],
+            manufacturer=MANUFACTURER,
+            configuration_url="http://" + tap[GW_IP] + "/"
+        )
+        self.coordinator = coordinator
+        self._attrs = {}
+
+    @property
+    def unique_id(self):
+        return self._attr_unique_id
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def is_on(self):
+        status = self.coordinator.data
+        return bool(status.get("is_paused", False))
+
+    @property
+    def extra_state_attributes(self):
+        return self._attrs
+
+    async def async_turn_on(self, **kwargs):
+        await self._pause_tap(hours=24)  # Default to 24 hours pause
+        await self.coordinator.async_request_refresh()
+
+    async def async_turn_off(self, **kwargs):
+        await self._pause_tap(hours=0)
+        await self.coordinator.async_request_refresh()
+
+    async def _pause_tap(self, hours):
+        _LOGGER.debug(f"PauseSwitch: Pausing {self.entity_id} for {hours} hours")
+        gw_id = self.coordinator.get_gw_id()
+        await self.coordinator.tap_api.pause_tap(gw_id, self.tap_id, hours)
