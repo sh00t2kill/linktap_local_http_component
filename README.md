@@ -10,7 +10,7 @@ In short, its designed to replicate the "Instant Watering" functionality of the 
 It requires just the configuration IP of your gateway. If you have more than 1 gateway, you can setup multiple instances of the integration.
 
 A device is created for each tap found. Multi-valve TapLinkers or ValveLinkers will get a device created for each output.
-<br><b>Note:</b> version `x060820` (x is S or G, indicating that the firmware belongs to GW-01 or GW-02, respectively) is required on your Linktap Gateway in order for this component to work.
+
 
 <b>How do I use this integration?</b>
 <p>
@@ -56,15 +56,54 @@ sensors:
 | Plan SN              | Serial number of the watering plan. A numerical identifier. |
 
 number:
-<ul>
-<li>Watering Duration (Defaults to 15 minutes)</li>
-<li>Watering Volume (Defaults to 0)</li>
-</ul>
-<p><strong>Note:</strong> The volume unit is pulled from the gateway. It can either be in L or Gal.</p>
 
-These control the watering time and volume, when the switch for a tap is turned on <strong>by Home Assistant</strong> (ignored if ANY OTHER mechanism is used to start watering, iethe manual button, the mobile app, or MQTT).<br/>
+- Watering Duration (Defaults to 15 minutes)
+- Watering Volume (Defaults to 0)
+- Pause Duration (Defaults to 24 hours, min 1, max 96)
+
+Note: The volume unit is pulled from the gateway. It can either be in L or Gal.
+
+These control the watering time, volume, and pause duration when the switch for a tap is turned on by Home Assistant (ignored if ANY OTHER mechanism is used to start watering, i.e. the manual button, the mobile app, or MQTT).
 The water will turn off when either the Watering Duration or Watering Volume is reached (whichever comes first), unless the Watering Volume is set to 0, in which case it is ignored and only Watering Duration is considered.
 
+## Services
+
+### `switch.pause`
+
+Pauses a tap for a specified number of hours.
+
+**Fields:**
+
+- `entity_id` (required): The switch entity to pause (e.g. `switch.linktap_fake_tap_1`).
+- `hours` (optional, default: 1): Number of hours to pause the tap. If not specified, defaults to 1. If set to 0, unpauses the tap.
+
+### `valve.pause_valve`
+
+Pauses a tap (valve) for a specified number of hours.
+
+**Fields:**
+
+- `entity_id` (required): The valve entity to pause (e.g. `valve.linktap_fake_tap_1`).
+- `hours` (optional, default: 1): Number of hours to pause the tap. If not specified, defaults to 1. If set to 0, unpauses the tap.
+
+### `valve.start_watering`
+
+Starts watering for a specified number of seconds.
+
+**Fields:**
+
+- `entity_id` (required): The valve entity to start watering (e.g. `valve.linktap_fake_tap_1`).
+- `seconds` (optional, default: 9000): Number of seconds to water. If not specified, defaults to 9000.
+
+### Pause Switch
+
+A special switch entity is created for each tap, named like `switch.pause_<tap_name>`. This switch allows you to pause or unpause a tap directly from the Home Assistant UI.
+
+- Turning the pause switch **on** will pause the tap for the number of hours set in the corresponding "Pause Duration" number entity (defaults to 24 hours).
+- Turning the pause switch **off** will immediately unpause the tap.
+- The state of the pause switch reflects whether the tap is currently paused.
+
+This is useful for quickly pausing watering without needing to call a service or automation.
 
 switch:<br/>
 The tap controller itself. The switch has a number of attributes. In general these can be ignored, as they have matching sensors and binary_sensors, but are helpful in debugging.
