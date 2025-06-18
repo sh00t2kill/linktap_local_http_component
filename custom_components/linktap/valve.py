@@ -142,8 +142,8 @@ class LinktapValve(CoordinatorEntity, ValveEntity):
     def device_info(self) -> DeviceInfo:
         return self._attr_device_info
 
-    async def _pause_tap(self, hours=False):
-        if not hours:
+    async def _pause_tap(self, hours=None):
+        if hours is None:
             hours = 1
         _LOGGER.debug(f"Pausing {self.entity_id} for {hours} hours")
         gw_id = self.coordinator.get_gw_id()
