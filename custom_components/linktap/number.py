@@ -112,7 +112,7 @@ class LinktapPauseDurationNumber(CoordinatorEntity, RestoreNumber):
         self.platform = "number"
         self._attr_unique_id = slugify(f"{DOMAIN}_{self.platform}_{self.tap_id}_pause_duration")
         self._attr_native_min_value = 1
-        self._attr_native_max_value = 96
+        self._attr_native_max_value = 240
         self._attr_native_step = 1
         self._attr_native_unit_of_measurement = unit_of_measurement
         self._attr_icon = icon
