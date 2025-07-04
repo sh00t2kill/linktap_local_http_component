@@ -63,16 +63,6 @@ class LinktapLocal:
         headers = {"content-type": "application/json; charset=UTF-8"}
 
         url = "http://" + self.ip + "/api.shtml"
-        status, response = await self._make_request(url, data, headers)
-        # Every now and then, a request will throw a 404.
-        # Ive never seen it fail twice, so lets try it again.
-        if status == 404:
-            _LOGGER.debug("Got a 404 issue: Wait and try again")
-            raise JSONDecodeError("404 Not Found")
-        return response
-
-    async def _make_request(self, url, data, headers):
-        """Make the actual http request and present the status and response json"""
 
         async with aiohttp.ClientSession() as session:
             async with await session.post(url, json=data, headers=headers) as resp:
@@ -84,7 +74,12 @@ class LinktapLocal:
                     """Fallback to html wrapped"""
                     response = json.loads(self.clean_response(await resp.text()))
 
-        return status, response
+        # Every now and then, a request will throw a 404.
+        # Ive never seen it fail twice, so lets try it again.
+        if status == 404:
+            _LOGGER.debug("Got a 404 issue: Wait and try again")
+            raise JSONDecodeError("404 Not Found")
+        return response
 
     async def fetch_data(self, gw_id, dev_id):
         status = await self.get_tap_status(gw_id, dev_id)
