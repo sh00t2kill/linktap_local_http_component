@@ -110,7 +110,8 @@ class LinktapCoordinator(DataUpdateCoordinator):
             hass,
             _LOGGER,
             name=DOMAIN,
-            update_interval=timedelta(seconds=13),
+            update_interval=timedelta(seconds=random.randint(10,14), milliseconds=random.randint(0,1000))
+            #update_interval=timedelta(seconds=13),
         )
         self.tap_api = linker
         self.conf = conf
