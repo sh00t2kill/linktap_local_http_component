@@ -1,7 +1,5 @@
-import asyncio
 import json
 import logging
-import random
 import re
 from json.decoder import JSONDecodeError
 
@@ -13,6 +11,7 @@ from .const import (CONFIG_CMD, DEFAULT_TIME, DISMISS_ALERT_CMD, PAUSE_CMD,
                     START_CMD, STATUS_CMD, STOP_CMD)
 
 _LOGGER = logging.getLogger(__name__)
+
 
 class LinktapLocal:
 
@@ -38,38 +37,37 @@ class LinktapLocal:
     def clean_response(self, text):
         """Remove html tags from a string"""
         text = text.replace("api", "")
-        clean = re.compile('<.*?>')
-        cleaned_text = re.sub(clean, '', text)
+        clean = re.compile("<.*?>")
+        cleaned_text = re.sub(clean, "", text)
         cleaned_text = cleaned_text.replace("api", "")
         return cleaned_text.strip()
-
 
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=1, max=4),
-        retry=retry_if_exception_type(JSONDecodeError)
+        retry=retry_if_exception_type(JSONDecodeError),
     )
     async def _request(self, data):
 
-        headers = {
-          "content-type": "application/json; charset=UTF-8"
-        }
+        headers = {"content-type": "application/json; charset=UTF-8"}
 
         url = "http://" + self.ip + "/api.shtml"
-        response = await self._make_request(url, data, headers)
+
+        async with aiohttp.ClientSession() as session:
+            async with await session.post(url, json=data, headers=headers) as resp:
+                status = resp.status
+                try:
+                    """Check if it's JSON formatted"""
+                    response = await resp.json()
+                except aiohttp.client_exceptions.ContentTypeError:
+                    """Fallback to html wrapped"""
+                    response = json.loads(self.clean_response(await resp.text()))
+
         # Every now and then, a request will throw a 404.
         # Ive never seen it fail twice, so lets try it again.
-        if response.find("404") != -1:
+        if status == 404:
             _LOGGER.debug("Got a 404 issue: Wait and try again")
             raise JSONDecodeError("404 Not Found")
-        jsonresp = json.loads(self.clean_response(response))
-        return jsonresp
-
-    async def _make_request(self, url, data, headers):
-        async with aiohttp.ClientSession() as session:
-                async with await session.post(url, json=data, headers=headers) as resp:
-                    response = await resp.text()
-        await session.close()
         return response
 
     async def fetch_data(self, gw_id, dev_id):
@@ -92,7 +90,7 @@ class LinktapLocal:
             "cmd": START_CMD,
             "gw_id": gw_id,
             "dev_id": dev_id,
-            "duration": int(float(seconds))
+            "duration": int(float(seconds)),
         }
         if volume and volume != 0:
             data["volume"] = volume
@@ -111,22 +109,14 @@ class LinktapLocal:
         return status["ret"] == 0
 
     async def pause_tap(self, gw_id, dev_id, hours):
-        data = {
-            "cmd": PAUSE_CMD,
-            "gw_id": gw_id,
-            "dev_id": dev_id,
-            "duration": hours
-        }
+        data = {"cmd": PAUSE_CMD, "gw_id": gw_id, "dev_id": dev_id, "duration": hours}
         _LOGGER.debug(f"Pause Payload: {data}")
         status = await self._request(data)
         _LOGGER.debug(f"Pause Response: {status}")
         return status["ret"] == 0
 
     async def get_gw_config(self, gw_id):
-        data = {
-            "cmd": CONFIG_CMD,
-            "gw_id": gw_id
-        }
+        data = {"cmd": CONFIG_CMD, "gw_id": gw_id}
         status = await self._request(data)
         return status
 
@@ -149,10 +139,9 @@ class LinktapLocal:
 
     """This is potentially a little hacky, as it actually sends a malformatted request to the gateway.
     The ID of the gateway is returned in this malformed request, so lets use it for good and not evil."""
+
     async def get_gw_id(self):
-        data = {
-            "cmd":STATUS_CMD
-        }
+        data = {"cmd": STATUS_CMD}
         status = await self._request(data)
         return status["gw_id"]
 
@@ -164,6 +153,7 @@ class LinktapLocal:
     4: unusually high flow alert.
     5: unusually low flow alert.
     """
+
     async def dismiss_alert(self, gw_id, dev_id, alert_id=False):
         if not alert_id:
             alert_id = 0
@@ -172,7 +162,8 @@ class LinktapLocal:
             "gw_id": gw_id,
             "dev_id": dev_id,
             "alert": alert_id,
-            "enable": True
+            "enable": True,
         }
         status = await self._request(data)
+        return status["ret"] == 0
         return status["ret"] == 0
