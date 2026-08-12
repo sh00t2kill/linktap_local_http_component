@@ -159,7 +159,7 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
 
     @property
     def is_on(self):
-        return self.state()
+        return self.state == "on"
 
     @property
     def device_info(self) -> DeviceInfo:
