@@ -47,9 +47,11 @@ sensors:
 | Battery              | Battery level of the tap device |
 | Total Duration       | Watering duration of the current watering job. Should match the number entity, converted to seconds. |
 | Remain Duration      | Remaining watering duration, of the current watering job|
+| Watering Time Total  | Cumulative total watering time in seconds across all sessions (`TOTAL_INCREASING`). Suitable for use with the HA `utility_meter` helper. Persisted across restarts. |
 | Speed                | Water flow speed |
-| Volume               | Total water volume used for the current watering job. Resets to 0 upon completion to support the energy dashboard |
+| Volume               | Water volume used for the current watering job. Resets to 0 at the start of each new session. |
 | Volume Limit         | The volume limit set on the current watering job. Should match the number entity if set. |
+| Volume Total         | Cumulative total water volume across all sessions (`TOTAL_INCREASING`). Suitable for use with the HA `utility_meter` helper and energy dashboard. Persisted across restarts. |
 | Failsafe Duration    | The failsafe duration set for the tap - This is not configurable via this integration. |
 | Plan Mode            | Current watering plan mode. A numerical identifier. |
 | Plan Mode String     | A translation of the plan mode into the terms matching the app |
