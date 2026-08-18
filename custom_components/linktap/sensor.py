@@ -138,6 +138,7 @@ class LinktapVolumeTotalSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
         )
         self._total = 0.0
         self._previous_volume = 0.0
+        self._restored = False
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
@@ -145,6 +146,7 @@ class LinktapVolumeTotalSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
         if state and state.state not in ("unknown", "unavailable"):
             try:
                 self._total = float(state.state)
+                self._restored = True
             except ValueError:
                 self._total = 0.0
 
@@ -152,8 +154,13 @@ class LinktapVolumeTotalSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
         if not self.coordinator.data:
             return
         current = float(self.coordinator.data.get("volume", 0))
-        # volume drop means a new session started; commit the completed session
-        if current < self._previous_volume:
+        if self._restored:
+            # API retains last session's volume after completion; offset _total so
+            # native_value == restored state and the volume isn't counted twice.
+            self._total -= current
+            self._restored = False
+        elif current < self._previous_volume:
+            # volume drop means a new session started; commit the completed session
             self._total += self._previous_volume
         self._previous_volume = current
         self.async_write_ha_state()
