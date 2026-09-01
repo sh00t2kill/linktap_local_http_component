@@ -2,6 +2,6 @@
 # which has no Python 3.13 Windows wheel. GitHub Actions uses Python 3.12.
 pytest>=7.4
 pytest-asyncio>=0.23
-pytest-homeassistant-custom-component==0.13.316
+pytest-homeassistant-custom-component
 aioresponses>=0.7.6
 h11>=0.14
