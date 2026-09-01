@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 from json import JSONDecodeError
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import aiohttp.client_exceptions
 import pytest
-from aioresponses import aioresponses
 
 from custom_components.linktap.const import (
     CONFIG_CMD,
@@ -20,7 +20,30 @@ from custom_components.linktap.linktap_local import LinktapLocal
 
 from tests.conftest import MOCK_GW_CONFIG, MOCK_GW_ID, MOCK_GW_IP, MOCK_TAP_ID, MOCK_TAP_STATUS
 
-API_URL = f"http://{MOCK_GW_IP}/api.shtml"
+
+def _make_session_mock(
+    status=200, json_payload=None, raises_content_type_error=False, text=None
+):
+    """Return a minimal aiohttp.ClientSession mock for _request tests."""
+    resp = MagicMock()
+    resp.status = status
+    if raises_content_type_error:
+        resp.json = AsyncMock(
+            side_effect=aiohttp.client_exceptions.ContentTypeError(
+                MagicMock(), MagicMock()
+            )
+        )
+        resp.text = AsyncMock(return_value=text or "")
+    else:
+        resp.json = AsyncMock(return_value=json_payload)
+    resp.__aenter__ = AsyncMock(return_value=resp)
+    resp.__aexit__ = AsyncMock(return_value=False)
+
+    session = MagicMock()
+    session.post = AsyncMock(return_value=resp)
+    session.__aenter__ = AsyncMock(return_value=session)
+    session.__aexit__ = AsyncMock(return_value=False)
+    return session
 
 
 @pytest.fixture
@@ -38,27 +61,30 @@ def linktap():
 class TestRequest:
     async def test_success_returns_parsed_json(self, linktap):
         payload = {"ret": 0, "gw_id": MOCK_GW_ID}
-        with aioresponses() as m:
-            m.post(API_URL, payload=payload)
+        with patch("aiohttp.ClientSession", return_value=_make_session_mock(json_payload=payload)):
             result = await linktap._request({"cmd": STATUS_CMD})
         assert result == payload
 
     async def test_html_wrapped_response_is_parsed_via_fallback(self, linktap):
         """Gateway sometimes wraps JSON in HTML tags; the client must strip them."""
         body = '<html><body>api{"ret":0,"gw_id":"testgw"}api</body></html>'
-        with aioresponses() as m:
-            m.post(API_URL, body=body, content_type="text/html")
+        with patch(
+            "aiohttp.ClientSession",
+            return_value=_make_session_mock(raises_content_type_error=True, text=body),
+        ):
             result = await linktap._request({"cmd": STATUS_CMD})
         assert result["gw_id"] == "testgw"
         assert result["ret"] == 0
 
     async def test_404_raises_json_decode_error(self, linktap):
         """A 404 response is treated as a retryable failure via JSONDecodeError."""
-        with aioresponses() as m:
-            # Three 404s exhaust all tenacity attempts.
-            m.post(API_URL, status=404, payload={"ret": 1}, repeat=True)
-        with pytest.raises(JSONDecodeError):
-            await linktap._request({"cmd": STATUS_CMD})
+        with patch("asyncio.sleep", AsyncMock()):  # skip tenacity back-off waits
+            with patch(
+                "aiohttp.ClientSession",
+                return_value=_make_session_mock(status=404, json_payload={"ret": 1}),
+            ):
+                with pytest.raises(JSONDecodeError):
+                    await linktap._request({"cmd": STATUS_CMD})
 
 
 # ---------------------------------------------------------------------------

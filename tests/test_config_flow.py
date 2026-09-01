@@ -40,14 +40,14 @@ class TestValidatedGatewayIp:
 
 
 class TestLinktapFlowHandler:
-    async def test_form_is_shown_on_initial_load(self, hass):
+    async def test_form_is_shown_on_initial_load(self, hass, enable_custom_integrations):
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": config_entries.SOURCE_USER}
         )
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "user"
 
-    async def test_invalid_ip_shows_error_and_rerenders_form(self, hass):
+    async def test_invalid_ip_shows_error_and_rerenders_form(self, hass, enable_custom_integrations):
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": config_entries.SOURCE_USER}
         )
@@ -58,7 +58,7 @@ class TestLinktapFlowHandler:
         assert result["type"] == FlowResultType.FORM
         assert result["errors"].get(GW_IP) == "invalid_gateway_ip"
 
-    async def test_valid_ip_creates_config_entry(self, hass):
+    async def test_valid_ip_creates_config_entry(self, hass, enable_custom_integrations):
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": config_entries.SOURCE_USER}
         )
@@ -69,7 +69,7 @@ class TestLinktapFlowHandler:
         assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["data"][GW_IP] == "192.168.1.100"
 
-    async def test_ip_is_normalised_before_storage(self, hass):
+    async def test_ip_is_normalised_before_storage(self, hass, enable_custom_integrations):
         """Whitespace around the IP must be stripped before the entry is created."""
         result = await hass.config_entries.flow.async_init(
             DOMAIN, context={"source": config_entries.SOURCE_USER}

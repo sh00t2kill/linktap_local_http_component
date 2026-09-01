@@ -8,7 +8,7 @@ from homeassistant.exceptions import IntegrationError
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.linktap import async_setup_entry, async_unload_entry
-from custom_components.linktap.const import DOMAIN, GW_IP
+from custom_components.linktap.const import DOMAIN, GW_ID, GW_IP
 
 from tests.conftest import (
     MOCK_GW_CONFIG,
@@ -62,7 +62,7 @@ async def test_setup_entry_stores_gw_id_and_taps(hass, config_entry, patched_set
         await async_setup_entry(hass, config_entry)
 
     conf = hass.data[DOMAIN][config_entry.entry_id]["conf"]
-    assert conf["gw_id"] == MOCK_GW_ID
+    assert conf[GW_ID] == MOCK_GW_ID
     assert len(conf["taps"]) == 1
     tap = conf["taps"][0]
     assert tap["ID of Tap"] == MOCK_GW_CONFIG["end_dev"][0]
