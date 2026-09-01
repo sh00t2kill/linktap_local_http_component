@@ -1,4 +1,5 @@
 """Shared fixtures and test data for the linktap integration tests."""
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock

@@ -1,4 +1,5 @@
 """Tests for the LinktapLocal HTTP API client."""
+
 from __future__ import annotations
 
 from json import JSONDecodeError

@@ -1,4 +1,5 @@
 """Tests for LinktapCoordinator, focusing on async_set_water_plan_pause."""
+
 from __future__ import annotations
 
 from unittest.mock import patch
