@@ -4,11 +4,9 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from homeassistant.exceptions import HomeAssistantError
-
 from custom_components.linktap import LinktapCoordinator
 from custom_components.linktap.const import GW_ID, GW_IP
-
+from homeassistant.exceptions import HomeAssistantError
 from tests.conftest import (
     MOCK_GW_ID,
     MOCK_GW_IP,

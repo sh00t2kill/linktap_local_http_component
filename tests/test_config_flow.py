@@ -1,12 +1,13 @@
 """Tests for the LinktapFlowHandler config flow."""
 from __future__ import annotations
 
-import pytest
-from homeassistant import config_entries
-from homeassistant.data_entry_flow import FlowResultType
+from unittest.mock import AsyncMock, patch
 
+import pytest
 from custom_components.linktap.config_flow import _validated_gateway_ip
 from custom_components.linktap.const import DOMAIN, GW_IP
+from homeassistant import config_entries
+from homeassistant.data_entry_flow import FlowResultType
 
 
 # ---------------------------------------------------------------------------

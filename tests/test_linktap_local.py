@@ -6,7 +6,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp.client_exceptions
 import pytest
-
 from custom_components.linktap.const import (
     CONFIG_CMD,
     DEFAULT_TIME,
@@ -17,7 +16,6 @@ from custom_components.linktap.const import (
     STOP_CMD,
 )
 from custom_components.linktap.linktap_local import LinktapLocal
-
 from tests.conftest import MOCK_GW_CONFIG, MOCK_GW_ID, MOCK_GW_IP, MOCK_TAP_ID, MOCK_TAP_STATUS
 
 

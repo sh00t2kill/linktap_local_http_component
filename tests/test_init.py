@@ -4,12 +4,10 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from homeassistant.exceptions import IntegrationError
-from pytest_homeassistant_custom_component.common import MockConfigEntry
-
 from custom_components.linktap import async_setup_entry, async_unload_entry
 from custom_components.linktap.const import DOMAIN, GW_ID, GW_IP
-
+from homeassistant.exceptions import IntegrationError
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 from tests.conftest import (
     MOCK_GW_CONFIG,
     MOCK_GW_ID,
