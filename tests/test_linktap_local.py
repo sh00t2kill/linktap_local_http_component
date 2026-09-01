@@ -180,7 +180,9 @@ class TestTurnOn:
     async def test_sends_volume_when_provided(self, linktap):
         mock_req = AsyncMock(return_value={"ret": 0})
         with patch.object(linktap, "_request", mock_req):
-            await linktap.turn_on(MOCK_GW_ID, MOCK_TAP_ID, volume=500)
+            # seconds=0 avoids float(None) — turn_on always builds a duration field.
+            result = await linktap.turn_on(MOCK_GW_ID, MOCK_TAP_ID, seconds=0, volume=500)
+        assert result is True
         payload = mock_req.call_args[0][0]
         assert payload["volume"] == 500
 

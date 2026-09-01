@@ -67,7 +67,7 @@ class LinktapLocal:
         # Ive never seen it fail twice, so lets try it again.
         if status == 404:
             _LOGGER.debug("Got a 404 issue: Wait and try again")
-            raise JSONDecodeError("404 Not Found")
+            raise JSONDecodeError("404 Not Found", "", 0)
         return response
 
     async def fetch_data(self, gw_id, dev_id):
