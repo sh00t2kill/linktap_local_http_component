@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp.client_exceptions
 import pytest
+
 from custom_components.linktap.const import (
     CONFIG_CMD,
     DEFAULT_TIME,

@@ -4,8 +4,9 @@ from __future__ import annotations
 from unittest.mock import AsyncMock
 
 import pytest
-from custom_components.linktap.const import DOMAIN, GW_IP
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+from custom_components.linktap.const import DOMAIN, GW_IP
 
 MOCK_GW_IP = "192.168.1.100"
 MOCK_GW_ID = "abc123gateway"
