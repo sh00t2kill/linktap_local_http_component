@@ -5,3 +5,4 @@ pytest-asyncio>=0.23
 pytest-homeassistant-custom-component
 aioresponses>=0.7.6
 h11>=0.14
+tenacity
