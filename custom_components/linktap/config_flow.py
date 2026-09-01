@@ -13,10 +13,18 @@ from homeassistant.core import callback
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import selector
 
-from .const import (CONF_MAX_WATERING_DURATION, CONF_MAX_WATERING_VOLUME,
-                    CONF_WATERING_SAFETY_LIMITS, DEFAULT_NAME, DOMAIN, GW_IP,
-                    NAME, NATIVE_MAX_WATERING_DURATION,
-                    NATIVE_MAX_WATERING_VOLUME, TAP_ID)
+from .const import (
+    CONF_MAX_WATERING_DURATION,
+    CONF_MAX_WATERING_VOLUME,
+    CONF_WATERING_SAFETY_LIMITS,
+    DEFAULT_NAME,
+    DOMAIN,
+    GW_IP,
+    NAME,
+    NATIVE_MAX_WATERING_DURATION,
+    NATIVE_MAX_WATERING_VOLUME,
+    TAP_ID,
+)
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -1,19 +1,14 @@
 """Tests for LinktapCoordinator, focusing on async_set_water_plan_pause."""
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import pytest
 from homeassistant.exceptions import HomeAssistantError
 
 from custom_components.linktap import LinktapCoordinator
 from custom_components.linktap.const import GW_ID, GW_IP
-from tests.conftest import (
-    MOCK_GW_ID,
-    MOCK_GW_IP,
-    MOCK_TAP_ID,
-    MOCK_TAP_STATUS,
-)
+from tests.conftest import MOCK_GW_ID, MOCK_GW_IP, MOCK_TAP_ID, MOCK_TAP_STATUS
 
 
 @pytest.fixture
@@ -93,7 +88,9 @@ class TestAsyncSetWaterPlanPause:
         with patch.object(coordinator, "async_refresh", side_effect=_refresh):
             await coordinator.async_set_water_plan_pause(3)
 
-        coordinator.tap_api.pause_tap.assert_called_once_with(MOCK_GW_ID, MOCK_TAP_ID, 3)
+        coordinator.tap_api.pause_tap.assert_called_once_with(
+            MOCK_GW_ID, MOCK_TAP_ID, 3
+        )
 
     async def test_unpause_calls_api_and_verifies_unpaused_state(self, coordinator):
         coordinator.data = {**MOCK_TAP_STATUS, "is_paused": True}
@@ -112,7 +109,9 @@ class TestAsyncSetWaterPlanPause:
         with patch.object(coordinator, "async_refresh", side_effect=_refresh):
             await coordinator.async_set_water_plan_pause(0)
 
-        coordinator.tap_api.pause_tap.assert_called_once_with(MOCK_GW_ID, MOCK_TAP_ID, 0)
+        coordinator.tap_api.pause_tap.assert_called_once_with(
+            MOCK_GW_ID, MOCK_TAP_ID, 0
+        )
 
     async def test_gateway_rejection_raises(self, coordinator):
         coordinator.tap_api.pause_tap.return_value = False

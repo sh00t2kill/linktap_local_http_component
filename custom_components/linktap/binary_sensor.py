@@ -10,8 +10,10 @@ from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.helpers import entity_platform, service
 from homeassistant.helpers.entity import *
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
-from homeassistant.helpers.update_coordinator import (CoordinatorEntity,
-                                                      DataUpdateCoordinator)
+from homeassistant.helpers.update_coordinator import (
+    CoordinatorEntity,
+    DataUpdateCoordinator,
+)
 from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)

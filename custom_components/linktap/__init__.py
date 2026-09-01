@@ -15,8 +15,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceEntryType
 from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers.update_coordinator import (DataUpdateCoordinator,
-                                                      UpdateFailed)
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import DOMAIN, GW_ID, GW_IP, NAME, PLATFORMS, TAP_ID
 from .linktap_local import LinktapLocal

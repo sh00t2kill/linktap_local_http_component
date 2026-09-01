@@ -18,13 +18,7 @@ from custom_components.linktap.const import (
     STOP_CMD,
 )
 from custom_components.linktap.linktap_local import LinktapLocal
-from tests.conftest import (
-    MOCK_GW_CONFIG,
-    MOCK_GW_ID,
-    MOCK_GW_IP,
-    MOCK_TAP_ID,
-    MOCK_TAP_STATUS,
-)
+from tests.conftest import MOCK_GW_CONFIG, MOCK_GW_ID, MOCK_GW_IP, MOCK_TAP_ID
 
 
 def _make_session_mock(

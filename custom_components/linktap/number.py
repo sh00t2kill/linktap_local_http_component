@@ -6,17 +6,29 @@ from homeassistant.components.number import RestoreNumber
 from homeassistant.const import STATE_UNKNOWN
 from homeassistant.helpers.entity import *
 from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers.update_coordinator import (CoordinatorEntity,
-                                                      DataUpdateCoordinator)
+from homeassistant.helpers.update_coordinator import (
+    CoordinatorEntity,
+    DataUpdateCoordinator,
+)
 from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
 
-from .const import (CONF_MAX_WATERING_DURATION, CONF_MAX_WATERING_VOLUME,
-                    CONF_WATERING_SAFETY_LIMITS, DEFAULT_TIME, DEFAULT_VOL,
-                    DOMAIN, GW_ID, GW_IP, MANUFACTURER, NAME,
-                    NATIVE_MAX_WATERING_DURATION, NATIVE_MAX_WATERING_VOLUME,
-                    TAP_ID)
+from .const import (
+    CONF_MAX_WATERING_DURATION,
+    CONF_MAX_WATERING_VOLUME,
+    CONF_WATERING_SAFETY_LIMITS,
+    DEFAULT_TIME,
+    DEFAULT_VOL,
+    DOMAIN,
+    GW_ID,
+    GW_IP,
+    MANUFACTURER,
+    NAME,
+    NATIVE_MAX_WATERING_DURATION,
+    NATIVE_MAX_WATERING_VOLUME,
+    TAP_ID,
+)
 
 
 def _safety_limits(config, tap_id):
