@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp.client_exceptions
 import pytest
+from tenacity import RetryError
 
 from custom_components.linktap.const import (
     CONFIG_CMD,
@@ -17,7 +18,13 @@ from custom_components.linktap.const import (
     STOP_CMD,
 )
 from custom_components.linktap.linktap_local import LinktapLocal
-from tests.conftest import MOCK_GW_CONFIG, MOCK_GW_ID, MOCK_GW_IP, MOCK_TAP_ID, MOCK_TAP_STATUS
+from tests.conftest import (
+    MOCK_GW_CONFIG,
+    MOCK_GW_ID,
+    MOCK_GW_IP,
+    MOCK_TAP_ID,
+    MOCK_TAP_STATUS,
+)
 
 
 def _make_session_mock(
@@ -60,7 +67,10 @@ def linktap():
 class TestRequest:
     async def test_success_returns_parsed_json(self, linktap):
         payload = {"ret": 0, "gw_id": MOCK_GW_ID}
-        with patch("aiohttp.ClientSession", return_value=_make_session_mock(json_payload=payload)):
+        with patch(
+            "aiohttp.ClientSession",
+            return_value=_make_session_mock(json_payload=payload),
+        ):
             result = await linktap._request({"cmd": STATUS_CMD})
         assert result == payload
 
@@ -75,15 +85,16 @@ class TestRequest:
         assert result["gw_id"] == "testgw"
         assert result["ret"] == 0
 
-    async def test_404_raises_json_decode_error(self, linktap):
-        """A 404 response is treated as a retryable failure via JSONDecodeError."""
+    async def test_404_raises_retry_error_after_exhausted_attempts(self, linktap):
+        """After 3 failed 404s tenacity wraps the JSONDecodeError in RetryError."""
         with patch("asyncio.sleep", AsyncMock()):  # skip tenacity back-off waits
             with patch(
                 "aiohttp.ClientSession",
                 return_value=_make_session_mock(status=404, json_payload={"ret": 1}),
             ):
-                with pytest.raises(JSONDecodeError):
+                with pytest.raises(RetryError) as exc_info:
                     await linktap._request({"cmd": STATUS_CMD})
+        assert isinstance(exc_info.value.last_attempt.exception(), JSONDecodeError)
 
 
 # ---------------------------------------------------------------------------
@@ -180,7 +191,9 @@ class TestTurnOn:
         mock_req = AsyncMock(return_value={"ret": 0})
         with patch.object(linktap, "_request", mock_req):
             # seconds=0 avoids float(None) — turn_on always builds a duration field.
-            result = await linktap.turn_on(MOCK_GW_ID, MOCK_TAP_ID, seconds=0, volume=500)
+            result = await linktap.turn_on(
+                MOCK_GW_ID, MOCK_TAP_ID, seconds=0, volume=500
+            )
         assert result is True
         payload = mock_req.call_args[0][0]
         assert payload["volume"] == 500
