@@ -119,16 +119,12 @@ jobs:
           git add custom_components/linktap/manifest.json
           git commit -m "chore: release ${{ steps.version.outputs.next_tag }}"
 
-      - name: Create tag
-        run: git tag "${{ steps.version.outputs.next_tag }}"
-
-      - name: Push release branch and tag
+      - name: Push release branch
         id: push
         run: |
           release_branch="release/${{ steps.version.outputs.next_tag }}"
           git checkout -b "$release_branch"
           git push origin "$release_branch"
-          git push origin "${{ steps.version.outputs.next_tag }}"
           echo "release_branch=$release_branch" >> "$GITHUB_OUTPUT"
 
       - name: Open pull request for version bump
@@ -139,7 +135,9 @@ jobs:
             --base "$GITHUB_REF_NAME" \
             --head "${{ steps.push.outputs.release_branch }}" \
             --title "chore: release ${{ steps.version.outputs.next_tag }}" \
-            --body "Automated version bump for ${{ steps.version.outputs.next_tag }}."
+            --body "Automated version bump for ${{ steps.version.outputs.next_tag }}.
+          <!-- release-tag: ${{ steps.version.outputs.next_tag }} -->
+          <!-- create-release: ${{ inputs.create_release }} -->"
 
       - name: Enable auto-merge for version bump PR
         continue-on-error: true
@@ -147,12 +145,3 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh pr merge "${{ steps.push.outputs.release_branch }}" --squash --auto
-
-      - name: Create GitHub release
-        if: ${{ inputs.create_release }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create "${{ steps.version.outputs.next_tag }}" \
-            --title "${{ steps.version.outputs.next_tag }}" \
-            --generate-notes
