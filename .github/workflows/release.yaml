@@ -1,0 +1,136 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version part to bump from the latest stable tag
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      create_release:
+        description: Create a GitHub release after pushing the tag
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Bump manifest, tag, and release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git author
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Ensure workflow is running on a branch
+        run: |
+          if [ "$GITHUB_REF_TYPE" != "branch" ]; then
+            echo "This workflow must be run from a branch, not $GITHUB_REF_TYPE." >&2
+            exit 1
+          fi
+
+      - name: Calculate next version
+        id: version
+        shell: bash
+        run: |
+          latest_tag=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
+
+          if [ -z "$latest_tag" ]; then
+            latest_tag="v0.0.0"
+          fi
+
+          version="${latest_tag#v}"
+          IFS=. read -r major minor patch <<< "$version"
+
+          case "${{ inputs.bump }}" in
+            major)
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+            minor)
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            patch)
+              patch=$((patch + 1))
+              ;;
+            *)
+              echo "Unsupported bump type: ${{ inputs.bump }}" >&2
+              exit 1
+              ;;
+          esac
+
+          next_version="$major.$minor.$patch"
+          next_tag="v$next_version"
+
+          if git rev-parse "$next_tag" >/dev/null 2>&1; then
+            echo "Tag $next_tag already exists" >&2
+            exit 1
+          fi
+
+          echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
+          echo "next_version=$next_version" >> "$GITHUB_OUTPUT"
+          echo "next_tag=$next_tag" >> "$GITHUB_OUTPUT"
+
+      - name: Update manifest version
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+
+          manifest_path = Path("custom_components/linktap/manifest.json")
+          manifest_text = manifest_path.read_text(encoding="utf-8")
+          json.loads(manifest_text)
+
+          updated_manifest_text, replacement_count = re.subn(
+              r'("version"\s*:\s*")[^"]+(")',
+              r'\g<1>${{ steps.version.outputs.next_version }}\2',
+              manifest_text,
+              count=1,
+          )
+
+          if replacement_count != 1:
+              raise SystemExit("Expected exactly one manifest version field")
+
+          manifest_path.write_text(updated_manifest_text, encoding="utf-8")
+          PY
+
+      - name: Commit version bump
+        run: |
+          git add custom_components/linktap/manifest.json
+          git commit -m "chore: release ${{ steps.version.outputs.next_tag }}"
+
+      - name: Create tag
+        run: git tag "${{ steps.version.outputs.next_tag }}"
+
+      - name: Push commit and tag
+        run: |
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+          git push origin "${{ steps.version.outputs.next_tag }}"
+
+      - name: Create GitHub release
+        if: ${{ inputs.create_release }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.version.outputs.next_tag }}" \
+            --title "${{ steps.version.outputs.next_tag }}" \
+            --generate-notes
