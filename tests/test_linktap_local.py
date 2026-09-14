@@ -119,7 +119,9 @@ class TestCleanResponse:
 class TestPlanModeTranslation:
     def test_maps_master_valve_mode_and_unknown_values(self):
         tap = {TAP_ID: "tap-1", NAME: "Test Tap", GW_IP: MOCK_GW_IP}
-        sensor = LinktapSensor(MagicMock(), MagicMock(), tap, "plan_mode_string", "mode")
+        sensor = LinktapSensor(
+            MagicMock(), MagicMock(), tap, "plan_mode_string", "mode"
+        )
 
         assert sensor.translate_plan_mode(7) == "Master Valve"
         assert sensor.translate_plan_mode(99) == "Unknown (99)"
