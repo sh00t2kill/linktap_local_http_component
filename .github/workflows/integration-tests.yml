@@ -78,7 +78,11 @@ jobs:
           exit 1
 
       - name: Run integration tests
-        run: pytest tests/test_linktap_mocked_local_api.py -v --tb=short
+        run: >-
+          pytest tests/test_linktap_mocked_local_api.py
+          -v
+          --tb=short
+          --allow-hosts=127.0.0.1,localhost
 
       - name: Stop mocked local API
         if: always()
