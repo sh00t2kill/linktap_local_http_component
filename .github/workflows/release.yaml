@@ -136,9 +136,8 @@ jobs:
             --head "${{ steps.push.outputs.release_branch }}" \
             --title "chore: release ${{ steps.version.outputs.next_tag }}" \
             --body "Automated version bump for ${{ steps.version.outputs.next_tag }}.
-
-<!-- release-tag: ${{ steps.version.outputs.next_tag }} -->
-<!-- create-release: ${{ inputs.create_release }} -->"
+          <!-- release-tag: ${{ steps.version.outputs.next_tag }} -->
+          <!-- create-release: ${{ inputs.create_release }} -->"
 
       - name: Enable auto-merge for version bump PR
         continue-on-error: true
