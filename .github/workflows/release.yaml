@@ -20,6 +20,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   release:
@@ -121,10 +122,31 @@ jobs:
       - name: Create tag
         run: git tag "${{ steps.version.outputs.next_tag }}"
 
-      - name: Push commit and tag
+      - name: Push release branch and tag
+        id: push
         run: |
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          release_branch="release/${{ steps.version.outputs.next_tag }}"
+          git checkout -b "$release_branch"
+          git push origin "$release_branch"
           git push origin "${{ steps.version.outputs.next_tag }}"
+          echo "release_branch=$release_branch" >> "$GITHUB_OUTPUT"
+
+      - name: Open pull request for version bump
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr create \
+            --base "$GITHUB_REF_NAME" \
+            --head "${{ steps.push.outputs.release_branch }}" \
+            --title "chore: release ${{ steps.version.outputs.next_tag }}" \
+            --body "Automated version bump for ${{ steps.version.outputs.next_tag }}."
+
+      - name: Enable auto-merge for version bump PR
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr merge "${{ steps.push.outputs.release_branch }}" --squash --auto
 
       - name: Create GitHub release
         if: ${{ inputs.create_release }}
