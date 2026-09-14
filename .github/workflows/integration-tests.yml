@@ -80,6 +80,7 @@ jobs:
       - name: Run integration tests
         run: >-
           pytest tests/test_linktap_mocked_local_api.py
+          -p no:pytest_homeassistant_custom_component.plugins
           -v
           --tb=short
           --allow-hosts=127.0.0.1,localhost
