@@ -15,6 +15,11 @@ MOCK_TAP_ID = "1234567890"
 pytestmark = [pytest.mark.integration, pytest.mark.enable_socket]
 
 
+@pytest.fixture(autouse=True)
+def enable_socket_for_mocked_api(socket_enabled):
+    pass
+
+
 @pytest.fixture
 def linktap_mock_api_host():
     host = os.environ.get("LINKTAP_MOCK_API_HOST")
