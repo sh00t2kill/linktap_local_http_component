@@ -8,12 +8,11 @@ import pytest
 
 from custom_components.linktap.linktap_local import LinktapLocal
 
-
 MOCK_GW_ID = "BB54B60C004B12BB"
 MOCK_TAP_ID = "1234567890"
 
 
-pytestmark = pytest.mark.integration
+pytestmark = [pytest.mark.integration, pytest.mark.enable_socket]
 
 
 @pytest.fixture
