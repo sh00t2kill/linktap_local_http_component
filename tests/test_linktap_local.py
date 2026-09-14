@@ -13,12 +13,16 @@ from custom_components.linktap.const import (
     CONFIG_CMD,
     DEFAULT_TIME,
     DISMISS_ALERT_CMD,
+    GW_IP,
+    NAME,
     PAUSE_CMD,
     START_CMD,
     STATUS_CMD,
     STOP_CMD,
+    TAP_ID,
 )
 from custom_components.linktap.linktap_local import LinktapLocal
+from custom_components.linktap.sensor import LinktapSensor
 from tests.conftest import MOCK_GW_CONFIG, MOCK_GW_ID, MOCK_GW_IP, MOCK_TAP_ID
 
 
@@ -110,6 +114,15 @@ class TestCleanResponse:
     def test_strips_whitespace(self, linktap):
         result = linktap.clean_response('  {"ret": 0}  ')
         assert result == '{"ret": 0}'
+
+
+class TestPlanModeTranslation:
+    def test_maps_master_valve_mode_and_unknown_values(self):
+        tap = {TAP_ID: "tap-1", NAME: "Test Tap", GW_IP: MOCK_GW_IP}
+        sensor = LinktapSensor(MagicMock(), MagicMock(), tap, "plan_mode_string", "mode")
+
+        assert sensor.translate_plan_mode(7) == "Master Valve"
+        assert sensor.translate_plan_mode(99) == "Unknown (99)"
 
 
 # ---------------------------------------------------------------------------

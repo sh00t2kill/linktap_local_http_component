@@ -127,11 +127,23 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
             configuration_url="http://" + tap[GW_IP] + "/"
         )
 
-    # Modemode: watering mode (1 - Instant Mode, 2 - Calendar mode,
-    # 3 - 7 day mode, 4 - Odd-even mode, 5 - Interval mode, 6 - Month mode).
+    # Plan mode enum values reported by LinkTap. The gateway can also expose
+    # modes outside the currently known set, so map known values explicitly and
+    # retain the raw value in the fallback string for diagnostics.
     def translate_plan_mode(self, mode):
-        modes = ['NA', 'Instant', 'Calendar', '7-Day', 'Odd-Even', 'Interval', 'Month']
-        return modes[mode]
+        modes = {
+            0: "NA",
+            1: "Instant",
+            2: "Calendar",
+            3: "7-Day",
+            4: "Odd-Even",
+            5: "Interval",
+            6: "Month",
+            7: "Master Valve",
+        }
+        if mode in modes:
+            return modes[mode]
+        return f"Unknown ({mode})"
 
     @property
     def unique_id(self):
