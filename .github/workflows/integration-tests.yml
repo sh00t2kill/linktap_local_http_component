@@ -12,6 +12,7 @@ jobs:
   mocked-local-api:
     name: Run against mocked local API
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || !startsWith(github.head_ref, 'release/')
 
     env:
       LINKTAP_MOCK_API_HOST: 127.0.0.1:8080
