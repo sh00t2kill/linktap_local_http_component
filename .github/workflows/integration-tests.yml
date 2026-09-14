@@ -1,0 +1,95 @@
+name: Integration Tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  mocked-local-api:
+    name: Run against mocked local API
+    runs-on: ubuntu-latest
+
+    env:
+      LINKTAP_MOCK_API_HOST: 127.0.0.1:8080
+      LINKTAP_MOCK_API_REPO: sh00t2kill/linktap-mocked-local-api
+      LINKTAP_MOCK_API_REF: main
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check out mocked local API
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.LINKTAP_MOCK_API_REPO }}
+          ref: ${{ env.LINKTAP_MOCK_API_REF }}
+          token: ${{ secrets.LINKTAP_MOCK_API_TOKEN || github.token }}
+          path: linktap-mocked-local-api
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+          cache: pip
+          cache-dependency-path: requirements_test.txt
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Install test dependencies
+        run: pip install -r requirements_test.txt
+
+      - name: Initialize mocked tap state
+        working-directory: linktap-mocked-local-api
+        run: |
+          for tap in 1234567890 0987654321; do
+            printf '0' > "$tap.state"
+            printf '0' > "$tap.duration"
+            printf '0' > "$tap.pause"
+          done
+
+      - name: Start mocked local API
+        working-directory: linktap-mocked-local-api
+        run: |
+          nohup php -S "${LINKTAP_MOCK_API_HOST}" -t . api.shtml >../linktap-mocked-local-api.log 2>&1 &
+          echo $! >../linktap-mocked-local-api.pid
+
+      - name: Wait for mocked local API
+        run: |
+          for attempt in {1..20}; do
+            if curl --silent --show-error --fail \
+              --request POST \
+              --header 'Content-Type: application/json' \
+              --data '{"cmd":3}' \
+              "http://${LINKTAP_MOCK_API_HOST}/api.shtml"; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          cat linktap-mocked-local-api.log
+          exit 1
+
+      - name: Run integration tests
+        run: pytest tests/test_linktap_mocked_local_api.py -v --tb=short
+
+      - name: Stop mocked local API
+        if: always()
+        run: |
+          if [ -f linktap-mocked-local-api.pid ]; then
+            kill "$(cat linktap-mocked-local-api.pid)" || true
+          fi
+
+      - name: Upload mocked local API log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linktap-mocked-local-api-log
+          path: linktap-mocked-local-api.log
