@@ -24,7 +24,7 @@ permissions:
 
 jobs:
   release:
-    name: Bump manifest, tag, and release
+    name: Bump manifest and release
     runs-on: ubuntu-latest
 
     steps:
@@ -128,20 +128,73 @@ jobs:
           echo "release_branch=$release_branch" >> "$GITHUB_OUTPUT"
 
       - name: Open pull request for version bump
+        id: pr
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh pr create \
+          pr_url=$(gh pr create \
             --base "$GITHUB_REF_NAME" \
             --head "${{ steps.push.outputs.release_branch }}" \
             --title "chore: release ${{ steps.version.outputs.next_tag }}" \
-            --body "Automated version bump for ${{ steps.version.outputs.next_tag }}.
-          <!-- release-tag: ${{ steps.version.outputs.next_tag }} -->
-          <!-- create-release: ${{ inputs.create_release }} -->"
+            --body "Automated version bump for ${{ steps.version.outputs.next_tag }}.")
+
+          echo "pr_url=$pr_url" >> "$GITHUB_OUTPUT"
+          echo "pr_number=${pr_url##*/}" >> "$GITHUB_OUTPUT"
 
       - name: Enable auto-merge for version bump PR
-        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh pr merge "${{ steps.push.outputs.release_branch }}" --squash --auto
+          gh pr merge "${{ steps.pr.outputs.pr_number }}" --squash --auto
+
+      - name: Wait for version bump PR to merge
+        id: merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for attempt in {1..60}; do
+            state=$(gh pr view "${{ steps.pr.outputs.pr_number }}" --json state --jq .state)
+
+            if [ "$state" = "MERGED" ]; then
+              merge_commit=$(gh pr view "${{ steps.pr.outputs.pr_number }}" --json mergeCommit --jq .mergeCommit.oid)
+
+              if [ -z "$merge_commit" ] || [ "$merge_commit" = "null" ]; then
+                echo "Version bump PR merged, but no merge commit was reported" >&2
+                exit 1
+              fi
+
+              echo "merge_commit=$merge_commit" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+
+            if [ "$state" = "CLOSED" ]; then
+              echo "Version bump PR closed without merging" >&2
+              exit 1
+            fi
+
+            sleep 10
+          done
+
+          echo "Timed out waiting for version bump PR to merge" >&2
+          exit 1
+
+      - name: Create and push tag
+        run: |
+          git fetch origin "$GITHUB_REF_NAME" --tags
+
+          if git rev-parse "${{ steps.version.outputs.next_tag }}" >/dev/null 2>&1; then
+            echo "Tag ${{ steps.version.outputs.next_tag }} already exists" >&2
+            exit 1
+          fi
+
+          git tag "${{ steps.version.outputs.next_tag }}" "${{ steps.merge.outputs.merge_commit }}"
+          git push origin "${{ steps.version.outputs.next_tag }}"
+
+      - name: Create GitHub release
+        if: ${{ inputs.create_release }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.version.outputs.next_tag }}" \
+            --title "${{ steps.version.outputs.next_tag }}" \
+            --generate-notes
