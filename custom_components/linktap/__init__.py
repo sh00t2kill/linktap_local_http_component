@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import math
 import random
 from datetime import timedelta
 from json.decoder import JSONDecodeError
@@ -21,6 +22,8 @@ from .const import DOMAIN, GW_ID, GW_IP, NAME, PLATFORMS, TAP_ID
 from .linktap_local import LinktapLocal
 
 _LOGGER = logging.getLogger(__name__)
+
+MAX_PLAUSIBLE_SESSION_VOLUME = 10_000.0
 
 async def async_setup(_hass, _config):
     return True
@@ -123,6 +126,31 @@ class LinktapCoordinator(DataUpdateCoordinator):
     def get_gw_id(self):
         return self.conf[GW_ID]
 
+    def _validated_status(self, data):
+        """Return valid status data without allowing corrupt volume readings."""
+        raw_volume = data.get("volume")
+        try:
+            volume = float(raw_volume)
+        except (TypeError, ValueError):
+            volume = None
+
+        if (
+            volume is None
+            or not math.isfinite(volume)
+            or volume < 0
+            or volume > MAX_PLAUSIBLE_SESSION_VOLUME
+        ):
+            _LOGGER.warning(
+                "Rejecting invalid raw volume %r for LinkTap %s",
+                raw_volume,
+                self.tap_id,
+            )
+            if self.data is not None:
+                return self.data
+            raise UpdateFailed("Invalid initial LinkTap volume reading")
+
+        return data
+
     async def async_set_water_plan_pause(self, hours):
         """Safely set or clear this tap's watering-plan pause.
 
@@ -207,11 +235,13 @@ class LinktapCoordinator(DataUpdateCoordinator):
             # Note: asyncio.TimeoutError and aiohttp.ClientError are already
             # handled by the data update coordinator.
             async with async_timeout.timeout(10):
-                return await self.tap_api.fetch_data(gw_id, self.tap_id)
+                data = await self.tap_api.fetch_data(gw_id, self.tap_id)
+                return self._validated_status(data)
         except:# ApiAuthError as err:
             await asyncio.sleep(random.randint(1,3))
             async with async_timeout.timeout(10):
-                return await self.tap_api.fetch_data(gw_id, self.tap_id)
+                data = await self.tap_api.fetch_data(gw_id, self.tap_id)
+                return self._validated_status(data)
             # Raising ConfigEntryAuthFailed will cancel future updates
             # and start a config flow with SOURCE_REAUTH (async_step_reauth)
         #    raise ConfigEntryAuthFailed from err
