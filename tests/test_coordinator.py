@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.update_coordinator import UpdateFailed
 
 from custom_components.linktap import LinktapCoordinator
 from custom_components.linktap.const import GW_ID, GW_IP
@@ -154,3 +155,36 @@ class TestAsyncSetWaterPlanPause:
         with patch.object(coordinator, "async_refresh", side_effect=_refresh):
             with pytest.raises(HomeAssistantError, match="could not verify"):
                 await coordinator.async_set_water_plan_pause(1)
+
+
+# ---------------------------------------------------------------------------
+# _async_update_data raw volume validation
+# ---------------------------------------------------------------------------
+
+
+class TestRawVolumeValidation:
+    async def test_invalid_volume_retains_last_known_good_status(self, coordinator):
+        previous_data = coordinator.data
+        coordinator.tap_api.fetch_data.return_value = {
+            **MOCK_TAP_STATUS,
+            "volume": 345969088,
+        }
+
+        result = await coordinator._async_update_data()
+
+        assert result is previous_data
+        coordinator.tap_api.fetch_data.assert_awaited_once_with(MOCK_GW_ID, MOCK_TAP_ID)
+
+    async def test_invalid_initial_volume_retries_then_fails(self, hass, mock_linktap_api):
+        conf = {GW_IP: MOCK_GW_IP, GW_ID: MOCK_GW_ID}
+        coordinator = LinktapCoordinator(hass, mock_linktap_api, conf, MOCK_TAP_ID)
+        mock_linktap_api.fetch_data.return_value = {
+            **MOCK_TAP_STATUS,
+            "volume": float("nan"),
+        }
+
+        with patch("asyncio.sleep", AsyncMock()):
+            with pytest.raises(UpdateFailed, match="Invalid initial"):
+                await coordinator._async_update_data()
+
+        assert mock_linktap_api.fetch_data.await_count == 2
