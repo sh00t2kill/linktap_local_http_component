@@ -175,7 +175,9 @@ class TestRawVolumeValidation:
         assert result is previous_data
         coordinator.tap_api.fetch_data.assert_awaited_once_with(MOCK_GW_ID, MOCK_TAP_ID)
 
-    async def test_invalid_initial_volume_retries_then_fails(self, hass, mock_linktap_api):
+    async def test_invalid_initial_volume_retries_then_fails(
+        self, hass, mock_linktap_api
+    ):
         conf = {GW_IP: MOCK_GW_IP, GW_ID: MOCK_GW_ID}
         coordinator = LinktapCoordinator(hass, mock_linktap_api, conf, MOCK_TAP_ID)
         mock_linktap_api.fetch_data.return_value = {
