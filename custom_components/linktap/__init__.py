@@ -24,6 +24,7 @@ from .linktap_local import LinktapLocal
 _LOGGER = logging.getLogger(__name__)
 
 MAX_PLAUSIBLE_SESSION_VOLUME = 10_000.0
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 async def async_setup(_hass, _config):
     return True
