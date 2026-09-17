@@ -1,5 +1,14 @@
 {
   "config": {
+    "step": {
+      "user": {
+        "title": "Connect to LinkTap",
+        "description": "Enter the IPv4 address of your LinkTap gateway.",
+        "data": {
+          "gw_ip": "Gateway IP address"
+        }
+      }
+    },
     "error": {
       "invalid_gateway_ip": "Enter the LinkTap gateway IPv4 address only, for example 192.168.1.123. Do not include http://, a port, or /api.shtml."
     }
