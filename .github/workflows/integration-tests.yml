@@ -28,7 +28,6 @@ jobs:
         with:
           repository: ${{ env.LINKTAP_MOCK_API_REPO }}
           ref: ${{ env.LINKTAP_MOCK_API_REF }}
-          token: ${{ secrets.LINKTAP_MOCK_API_TOKEN || github.token }}
           path: linktap-mocked-local-api
 
       - name: Set up Python
