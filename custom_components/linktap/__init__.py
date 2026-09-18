@@ -5,18 +5,24 @@ import random
 from datetime import timedelta
 from json.decoder import JSONDecodeError
 
+import aiohttp
 import async_timeout
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from h11 import Data
 from homeassistant import core
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
-from homeassistant.exceptions import HomeAssistantError, IntegrationError
+from homeassistant.exceptions import (
+    ConfigEntryNotReady,
+    HomeAssistantError,
+    IntegrationError,
+)
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceEntryType
 from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from tenacity import RetryError
 
 from .const import DOMAIN, GW_ID, GW_IP, NAME, PLATFORMS, TAP_ID
 from .linktap_local import LinktapLocal
@@ -26,29 +32,38 @@ _LOGGER = logging.getLogger(__name__)
 MAX_PLAUSIBLE_SESSION_VOLUME = 10_000.0
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
+
 async def async_setup(_hass, _config):
     return True
 
-async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry)-> bool:
+
+async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up the platform."""
 
     gw_ip = entry.data.get(GW_IP)
 
     linker = LinktapLocal()
     linker.set_ip(gw_ip)
+
+    # A LinkTap gateway can be temporarily unavailable while Home Assistant is
+    # starting (for example, while the LAN or gateway itself is still coming up).
+    # Treat communication/parsing failures as transient so HA retries the config
+    # entry automatically instead of leaving the integration failed until reload.
     try:
         gw_id = await linker.get_gw_id()
-    except JSONDecodeError:
-        try:
-            await asyncio.sleep(random.randint(1,3))
-            gw_id = await linker.get_gw_id()
-        except JSONDecodeError:
-            await asyncio.sleep(random.randint(1,3))
-            gw_id = await linker.get_gw_id()
+        gateway_config = await linker.get_gw_config(gw_id)
+    except (
+        aiohttp.ClientError,
+        asyncio.TimeoutError,
+        JSONDecodeError,
+        RetryError,
+    ) as err:
+        raise ConfigEntryNotReady(
+            f"Unable to communicate with LinkTap gateway at {gw_ip}"
+        ) from err
 
     _LOGGER.debug(f"Found GW_ID: {gw_id}")
 
-    gateway_config = await linker.get_gw_config(gw_id)
     if "end_dev" not in gateway_config:
         raise IntegrationError("Linktap Gateway needs to be updated")
 
@@ -96,6 +111,7 @@ async def async_setup_entry(hass: core.HomeAssistant, entry: ConfigEntry)-> bool
 
     return True
 
+
 async def async_unload_entry(hass: core.HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a component config entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
@@ -103,9 +119,11 @@ async def async_unload_entry(hass: core.HomeAssistant, entry: ConfigEntry) -> bo
         hass.data[DOMAIN].pop(entry.entry_id)
     return unload_ok
 
+
 async def async_remove_config_entry_device(hass: core.HomeAssistant, entry: ConfigEntry, device) -> bool:
     device_registry(hass).async_remove_device(device.id)
     return True
+
 
 class LinktapCoordinator(DataUpdateCoordinator):
     def __init__(self, hass, linker, conf, tap_id):
@@ -248,6 +266,7 @@ class LinktapCoordinator(DataUpdateCoordinator):
         #    raise ConfigEntryAuthFailed from err
         #except ApiError as err:
         #    raise UpdateFailed(f"Error communicating with API: {err}")
+
 
 async def async_reload_entry(hass: core.HomeAssistant, entry: ConfigEntry) -> None:
     """Reload the config entry when it changed."""
