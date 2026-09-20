@@ -141,11 +141,14 @@ jobs:
           echo "pr_url=$pr_url" >> "$GITHUB_OUTPUT"
           echo "pr_number=${pr_url##*/}" >> "$GITHUB_OUTPUT"
 
-      - name: Enable auto-merge for version bump PR
+      - name: Merge version bump PR
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh pr merge "${{ steps.pr.outputs.pr_number }}" --squash --auto
+          # Auto-merge requires a pending required check; fall back to an immediate merge when the PR is already clean/mergeable.
+          if ! gh pr merge "${{ steps.pr.outputs.pr_number }}" --squash --auto; then
+            gh pr merge "${{ steps.pr.outputs.pr_number }}" --squash
+          fi
 
       - name: Wait for version bump PR to merge
         id: merge
