@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, patch
 
+import aiohttp
 import pytest
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.update_coordinator import UpdateFailed
@@ -175,7 +176,7 @@ class TestRawVolumeValidation:
         assert result is previous_data
         coordinator.tap_api.fetch_data.assert_awaited_once_with(MOCK_GW_ID, MOCK_TAP_ID)
 
-    async def test_invalid_initial_volume_retries_then_fails(
+    async def test_invalid_initial_volume_fails_without_retry(
         self, hass, mock_linktap_api
     ):
         conf = {GW_IP: MOCK_GW_IP, GW_ID: MOCK_GW_ID}
@@ -185,8 +186,30 @@ class TestRawVolumeValidation:
             "volume": float("nan"),
         }
 
+        with pytest.raises(UpdateFailed, match="Invalid initial"):
+            await coordinator._async_update_data()
+
+        assert mock_linktap_api.fetch_data.await_count == 1
+
+    async def test_transient_client_error_retries_once(self, coordinator):
+        coordinator.tap_api.fetch_data.side_effect = [
+            aiohttp.ClientError("temporary failure"),
+            MOCK_TAP_STATUS,
+        ]
+
         with patch("asyncio.sleep", AsyncMock()):
-            with pytest.raises(UpdateFailed, match="Invalid initial"):
+            result = await coordinator._async_update_data()
+
+        assert result == MOCK_TAP_STATUS
+        assert coordinator.tap_api.fetch_data.await_count == 2
+
+    async def test_second_client_error_raises_update_failed(self, coordinator):
+        coordinator.tap_api.fetch_data.side_effect = aiohttp.ClientError(
+            "gateway unavailable"
+        )
+
+        with patch("asyncio.sleep", AsyncMock()):
+            with pytest.raises(UpdateFailed, match="Error communicating"):
                 await coordinator._async_update_data()
 
-        assert mock_linktap_api.fetch_data.await_count == 2
+        assert coordinator.tap_api.fetch_data.await_count == 2

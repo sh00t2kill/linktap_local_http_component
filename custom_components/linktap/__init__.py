@@ -250,22 +250,28 @@ class LinktapCoordinator(DataUpdateCoordinator):
         #tap_id = self.conf["taps"][TAP_ID]
         gw_id = self.conf[GW_ID]
 
+        retryable_errors = (
+            aiohttp.ClientError,
+            asyncio.TimeoutError,
+            JSONDecodeError,
+            RetryError,
+        )
+
         try:
-            # Note: asyncio.TimeoutError and aiohttp.ClientError are already
-            # handled by the data update coordinator.
             async with async_timeout.timeout(10):
                 data = await self.tap_api.fetch_data(gw_id, self.tap_id)
                 return self._validated_status(data)
-        except:# ApiAuthError as err:
-            await asyncio.sleep(random.randint(1,3))
+        except retryable_errors:
+            await asyncio.sleep(random.randint(1, 3))
+
+        try:
             async with async_timeout.timeout(10):
                 data = await self.tap_api.fetch_data(gw_id, self.tap_id)
                 return self._validated_status(data)
-            # Raising ConfigEntryAuthFailed will cancel future updates
-            # and start a config flow with SOURCE_REAUTH (async_step_reauth)
-        #    raise ConfigEntryAuthFailed from err
-        #except ApiError as err:
-        #    raise UpdateFailed(f"Error communicating with API: {err}")
+        except retryable_errors as err:
+            raise UpdateFailed(
+                f"Error communicating with LinkTap gateway: {err}"
+            ) from err
 
 
 async def async_reload_entry(hass: core.HomeAssistant, entry: ConfigEntry) -> None:
