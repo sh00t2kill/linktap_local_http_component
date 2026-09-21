@@ -29,15 +29,8 @@ class LinktapLocal:
     ip = False
     gw_id = False
 
-    def __init__(self):
-        # Do nothing
-        print("Hello, its me!")
-
     def set_ip(self, ip):
         self.ip = ip
-
-    def get_ip(self, ip):
-        return self.ip
 
     def set_gw_id(self, gw_id):
         self.gw_id = gw_id
@@ -176,5 +169,4 @@ class LinktapLocal:
             "enable": True,
         }
         status = await self._request(data)
-        return status["ret"] == 0
         return status["ret"] == 0
