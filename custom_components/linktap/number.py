@@ -61,6 +61,8 @@ async def async_setup_entry(hass, config, async_add_entities, discovery_info=Non
                 "mdi:timer-pause", "h"
             )
         )
+        if getattr(coordinator.tap_api, "session_pause_supported", False) is True:
+            numbers.append(LinktapCurrentPauseDurationNumber(coordinator, tap))
     async_add_entities(numbers, True)
 
 
@@ -81,6 +83,7 @@ class LinktapNumber(CoordinatorEntity, RestoreNumber):
             f"{DOMAIN}_{self.platform}_{self.tap_id}_{number_suffix.replace(' ', '_')}"
         )
         self._attr_name = number_suffix
+
         self._attr_native_min_value = 0
         self._attr_native_max_value = NATIVE_MAX_WATERING_DURATION
         self._attr_native_step = 5
@@ -202,3 +205,29 @@ class LinktapPauseDurationNumber(CoordinatorEntity, RestoreNumber):
         self._attr_native_value = value
         self.async_write_ha_state()
         await self.coordinator.async_request_refresh()
+
+
+class LinktapCurrentPauseDurationNumber(CoordinatorEntity, RestoreNumber):
+    _attr_has_entity_name = True
+    _attr_name = "Pause Duration"
+    _attr_icon = "mdi:timer-pause-outline"
+    _attr_native_unit_of_measurement = "min"
+    _attr_native_min_value = 1
+    _attr_native_max_value = 60
+    _attr_native_step = 1
+
+    def __init__(self, coordinator, tap):
+        super().__init__(coordinator)
+        self.tap_id = tap[TAP_ID]
+        self._attr_unique_id = slugify(f"{DOMAIN}_number_{self.tap_id}_current_watering_pause_duration")
+        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, tap[TAP_ID])}, name=tap[NAME], manufacturer=MANUFACTURER, model=tap[TAP_ID], configuration_url="http://" + tap[GW_IP] + "/")
+
+    async def async_added_to_hass(self):
+        await super().async_added_to_hass()
+        restored = await self.async_get_last_number_data()
+        self._attr_native_value = float(restored.native_value) if restored and restored.native_value is not None else 10.0
+        self.async_write_ha_state()
+
+    async def async_set_native_value(self, value):
+        self._attr_native_value = max(1.0, min(float(value), 60.0))
+        self.async_write_ha_state()

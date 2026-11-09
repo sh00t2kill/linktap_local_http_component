@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock
+from unittest.mock import MagicMock
 
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.linktap.const import DOMAIN, GW_IP
+from custom_components.linktap.linktap_local import LinktapLocal
 
 MOCK_GW_IP = "192.168.1.100"
 MOCK_GW_ID = "abc123gateway"
@@ -27,6 +28,7 @@ MOCK_TAP_STATUS = {
     "is_manual_mode": False,
     "is_watering": False,
     "is_paused": False,
+    "is_paused_sess": False,
     "signal": 80,
     "battery": 95,
     "total_duration": 0,
@@ -64,7 +66,7 @@ def mock_config_entry():
 @pytest.fixture
 def mock_linktap_api():
     """Return a pre-configured AsyncMock for LinktapLocal."""
-    mock = AsyncMock()
+    mock = MagicMock(spec=LinktapLocal)
     mock.get_gw_id.return_value = MOCK_GW_ID
     mock.get_gw_config.return_value = dict(MOCK_GW_CONFIG)
     mock.fetch_data.return_value = dict(MOCK_TAP_STATUS)
@@ -72,4 +74,7 @@ def mock_linktap_api():
     mock.turn_off.return_value = True
     mock.pause_tap.return_value = True
     mock.dismiss_alert.return_value = True
+    mock.session_pause_supported = False
+    mock.gateway_version = "4.38"
+    mock.cmd19.return_value = {"ret": 0}
     return mock

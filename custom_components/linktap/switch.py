@@ -10,6 +10,7 @@ import voluptuous as vol
 from homeassistant.components.number import DOMAIN as NUMBER_DOMAIN
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_platform
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import service
@@ -78,6 +79,8 @@ async def async_setup_entry(hass, config, async_add_entities, discovery_info=Non
             )
         )
         switches.append(LinktapPauseSwitch(coordinator, hass, tap))
+        if getattr(coordinator.tap_api, "session_pause_supported", False) is True:
+            switches.append(LinktapCurrentWateringPauseSwitch(coordinator, hass, tap))
     async_add_entities(switches, True)
 
     platform = entity_platform.async_get_current_platform()
@@ -86,6 +89,7 @@ async def async_setup_entry(hass, config, async_add_entities, discovery_info=Non
         {vol.Required("hours", default=1): vol.Coerce(int)},
         "_pause_tap",
     )
+
 
 
 class LinktapSwitch(CoordinatorEntity, SwitchEntity):
@@ -147,15 +151,17 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
     async def async_turn_on(self, **kwargs):
         duration = self.get_watering_duration()
         seconds = int(float(duration)) * 60
-        gw_id = self.coordinator.get_gw_id()
-        await self.tap_api.turn_on(
-            gw_id, self.tap_id, seconds, self.get_watering_volume()
-        )
+        if seconds == 0 and self.max_watering_duration is not None:
+            # Zero still selects the instant-watering default, but the fallback
+            # must not bypass a configured ceiling.
+            seconds = int(min(DEFAULT_TIME, self.max_watering_duration) * 60)
+            if seconds < 3:
+                raise HomeAssistantError("Configured watering duration limit is below 3 seconds")
+        await self.coordinator.async_start_watering(seconds, self.get_watering_volume())
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs):
-        gw_id = self.coordinator.get_gw_id()
-        await self.tap_api.turn_off(gw_id, self.tap_id)
+        await self.coordinator.async_safe_stop_watering()
         await self.coordinator.async_request_refresh()
 
     def get_watering_duration(self):
@@ -206,19 +212,15 @@ class LinktapSwitch(CoordinatorEntity, SwitchEntity):
     def state(self):
         status = self.coordinator.data
         self._attrs["data"] = status
-        duration = self.get_watering_duration()
-        volume = self.get_watering_volume()
-        self._attrs[ATTR_STATE] = status[ATTR_STATE]
-        state = "unknown"
-        if status[ATTR_STATE]:
-            state = "on"
-        elif not status[ATTR_STATE]:
-            state = "off"
-        return state
+        self.get_watering_duration()
+        self.get_watering_volume()
+        watering = self.is_on
+        self._attrs[ATTR_STATE] = watering
+        return STATE_UNKNOWN if watering is None else ("on" if watering else "off")
 
     @property
     def is_on(self):
-        return self.state == "on"
+        return self.coordinator.watering_state
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -265,7 +267,7 @@ class LinktapPauseSwitch(CoordinatorEntity, SwitchEntity):
     @property
     def is_on(self):
         status = self.coordinator.data
-        return bool(status.get("is_paused", False))
+        return self.coordinator.plan_paused
 
     @property
     def extra_state_attributes(self):
@@ -279,7 +281,7 @@ class LinktapPauseSwitch(CoordinatorEntity, SwitchEntity):
         if entity and entity.state not in (None, STATE_UNKNOWN, STATE_UNAVAILABLE):
             try:
                 hours = int(float(entity.state))
-            except Exception:
+            except (TypeError, ValueError, OverflowError):
                 hours = 24
         await self._pause_tap(hours=hours)
 
@@ -288,3 +290,31 @@ class LinktapPauseSwitch(CoordinatorEntity, SwitchEntity):
 
     async def _pause_tap(self, hours):
         await self.coordinator.async_set_water_plan_pause(hours)
+
+
+class LinktapCurrentWateringPauseSwitch(CoordinatorEntity, SwitchEntity):
+    """CMD19 control for the current watering session."""
+    _attr_has_entity_name = True
+    _attr_name = "Pause Current Watering"
+    _attr_icon = "mdi:pause-circle-outline"
+
+    def __init__(self, coordinator, hass, tap):
+        super().__init__(coordinator)
+        self.hass = hass
+        self.tap_id = tap[TAP_ID]
+        self._attr_unique_id = slugify(f"{DOMAIN}_switch_{self.tap_id}_pause_current_watering")
+        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, tap[TAP_ID])}, name=tap[NAME], manufacturer=MANUFACTURER, configuration_url="http://" + tap[GW_IP] + "/")
+
+    @property
+    def is_on(self):
+        return self.coordinator.confirmed_session_paused
+
+    async def async_turn_on(self, **kwargs):
+        minutes_id = _number_entity_id(self.hass, self.tap_id, "current_watering_pause_duration")
+        st = self.hass.states.get(minutes_id) if minutes_id else None
+        minutes = float(st.state) if st and st.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE) else 10.0
+        option = getattr(self.coordinator, "current_pause_selected_option", 0)
+        await self.coordinator.async_pause_current_watering(minutes / 60.0, option=option)
+
+    async def async_turn_off(self, **kwargs):
+        await self.coordinator.async_resume_current_watering()

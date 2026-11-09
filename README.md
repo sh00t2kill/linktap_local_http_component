@@ -2,7 +2,7 @@
 
 A custom Home Assistant integration for LinkTap TapLinkers and ValveLinkers using the LinkTap gateway's **local HTTP API**.
 
-The integration provides local control and monitoring of LinkTap devices, including LinkTap-style **Instant Watering**, device status, water/flow sensors, cumulative watering totals, water-plan pause controls, alerts, and optional Home Assistant-side watering safety limits.
+The integration provides local control and monitoring of LinkTap devices, including **Instant Watering**, water and flow sensors, cumulative totals, watering-plan pause, alerts, and optional Home Assistant watering limits. Compatible gateway firmware also adds [current-session pause, resume and stop controls](docs/session-controls.md).
 
 > [!IMPORTANT]
 > The LinkTap gateway's **Local HTTP API must be enabled** and the gateway must be reachable directly from Home Assistant on the local network.
@@ -49,17 +49,17 @@ The integration creates:
 - status and alert **binary sensors**;
 - water, flow, duration, plan and diagnostic **sensors**.
 
-The main switch and valve are functionally equivalent for normal watering control and should remain in sync.
+The main switch and valve both control instant watering. The [session control guide](docs/session-controls.md#session-entities) lists the six additional entities created for each output on compatible firmware. Upgrading preserves existing entity IDs, unique IDs and settings. Keep the existing integration entry when upgrading.
 
 ## Instant Watering
 
 For normal Home Assistant instant watering:
 
-1. Set **Watering Duration**.
-2. Optionally set **Watering Volume**.
+1. Set **Watering duration**.
+2. Optionally set **Watering volume**.
 3. Turn on the main LinkTap switch or open the LinkTap valve.
 
-The integration sends both limits to the LinkTap gateway. Watering **stops when the first applicable limit is reached.**
+The integration sends a duration and, when set, a volume target to the gateway. On a device with a connected, supported flow meter, watering stops at the first applicable limit.
 
 ### Watering Duration
 
@@ -67,6 +67,8 @@ The integration sends both limits to the LinkTap gateway. Watering **stops when 
 - Default: **15 minutes**
 - Native integration range: **0–120 minutes**
 - Step: **5 minutes**
+
+`0` selects the 15-minute default, capped by any configured maximum duration.
 
 ### Watering Volume
 
@@ -79,6 +81,12 @@ A Watering Volume value of `0` means **no volume cutoff**. In that case watering
 
 > [!NOTE]
 > These Home Assistant duration/volume helpers are used for watering started through the integration's normal switch/valve control path. Watering started from the LinkTap app, the physical device button, MQTT, or another external mechanism is controlled by LinkTap itself and does not use these Home Assistant helper values.
+
+### Retained session telemetry and `live_only`
+
+After a session ends, the gateway normally retains the last reported `volume`, `total_duration` and `remain_duration`. Those values can describe a completed session even when the valve is idle. Home Assistant displays **Remain Duration** as zero when idle is confirmed.
+
+The gateway API has an optional CMD6 field, `live_only`, that clears these three fields when a session fully ends. A CMD19 pause preserves them. Setting `live_only` to `1` persists across subsequent watering tasks, including those started by the physical button or a watering plan, until a client explicitly resets it to `0` or the gateway restarts. The integration omits this field and has no control for changing it.
 
 ## Optional instant-watering safety limits
 
@@ -107,11 +115,11 @@ When configured, the selected maximum:
 `0` retains its existing special meaning for Watering Volume: **no volume cutoff**.
 
 > [!CAUTION]
-> The `valve.start_watering` entity service accepts its own duration in seconds and currently sends that request directly to the LinkTap API. It does not use the Watering Duration / Watering Volume number helpers, so do not assume the optional helper safety ceilings apply to that service call.
+> `linktap.start_watering` accepts its own duration in seconds. The helper values and their safety ceilings apply to the normal switch and valve controls only.
 
 ## Water-plan pause controls
 
-LinkTap's pause function pauses the **Watering Plan**. It is not a conventional pause/resume control for a watering session that is currently running.
+**Pause Water Plan** uses CMD18 to pause the existing LinkTap server schedule. The gateway must be connected to the LinkTap server. LinkTap documents that a successful plan pause ends any watering in progress early. Resuming the plan restores the schedule. Use [Pause Current Watering](docs/session-controls.md) to suspend and later resume an individual session on compatible firmware.
 
 The relevant entities are:
 
@@ -127,7 +135,7 @@ The relevant entities are:
 
 Turning **Pause Water Plan** on pauses the LinkTap watering plan for the configured number of hours.
 
-Turning it off sends an unpause request.
+Turning it off resumes a paused plan. **Is Paused** continues to report the plan state (`is_paused`).
 
 ### Repeated-pause protection
 
@@ -149,17 +157,17 @@ You may now rename LinkTap entity IDs in Home Assistant without breaking the int
 
 Existing entity IDs and unique IDs were intentionally preserved during this change, so upgrading does not force an entity migration.
 
-Example IDs for newly created/recreated entities may look like:
+Example IDs for an output named Garden Tap may look like:
 
 ```text
-switch.linktap_g2s01
-valve.linktap_g2s01
-switch.linktap_g2s01_pause
-number.linktap_g2s01_watering_duration
-number.linktap_g2s01_watering_volume
-number.linktap_g2s01_pause_duration
-sensor.linktap_g2s01_battery
-sensor.linktap_g2s01_signal
+switch.garden_tap
+valve.garden_tap
+switch.garden_tap_pause_water_plan
+number.garden_tap_watering_duration
+number.garden_tap_watering_volume
+number.garden_tap_pause_duration_water_plan
+sensor.garden_tap_battery
+sensor.garden_tap_signal
 ```
 
 These are examples only; Home Assistant controls generated entity IDs.
@@ -202,7 +210,7 @@ Since v0.8.0, the fault-oriented entities — fall, cutoff, leaking, clogged and
 
 Since v0.8.0, **Remain Duration** is normalised to `0` when watering has stopped.
 
-Some LinkTap responses retain a stale final non-zero remaining-duration value after watering ends. The integration therefore reports the gateway value while watering or paused, and `0` otherwise.
+The integration reports the gateway value while watering or while the current session is paused, and `0` when idle is confirmed. If the RF link is lost or the runtime state cannot be confirmed, the value can be `unknown`. Plan pause alone does not indicate a paused session.
 
 ## Water flow and Home Assistant statistics
 
@@ -244,7 +252,7 @@ Before a raw sample can affect the persistent accumulator, the integration rejec
 - negative values;
 - grossly implausible session-volume values.
 
-Where LinkTap reports a non-zero `volume_limit`, that is also used as a stronger contextual plausibility bound with generous tolerance.
+During active or session-paused watering, the integration also checks the reported volume against a non-zero `volume_limit`, with tolerance. When idle, the reported volume may belong to the previous session, so the integration uses the absolute plausibility bound.
 
 Rejected values are **dropped rather than clamped**, so they do not replace the last known-good accumulator sample. A warning is logged when a sample is rejected.
 
@@ -252,14 +260,14 @@ This is a defensive Home Assistant safeguard. It does **not** claim to fix the u
 
 ### Watering Time Total
 
-`Watering Time Total` is maintained by Home Assistant, persists across restarts, reports cumulative watering time in seconds and uses `state_class: total_increasing`.
+`Watering Time Total` is maintained by Home Assistant, persists across restarts, reports cumulative watering time in seconds and uses `state_class: total_increasing`. Totals use confirmed samples and may miss activity during an outage. A failed poll can make the totals unavailable until communication recovers.
 
 ## Number entities
 
 | Number entity | Default | Range | Unit | Purpose |
 |---|---:|---:|---|---|
-| **Watering Duration** | 15 | 0–120 | min | Requested instant-watering duration |
-| **Watering Volume** | 0 | 0–2000 | L or Gal | Optional volume cutoff; `0` disables it |
+| **Watering duration** | 15 | 0-120 | min | Requested instant-watering duration |
+| **Watering volume** | 0 | 0-2000 | L or Gal | Optional volume cutoff; `0` disables it |
 | **Pause Duration Water Plan** | 24 | 1–240 | h | Duration used when pausing the water plan |
 
 Optional per-device safety limits reduce the effective maximum of Watering Duration and/or Watering Volume.
@@ -273,11 +281,11 @@ For normal operation:
 - switch on / valve open → start instant watering using the configured Home Assistant duration/volume values;
 - switch off / valve close → stop watering.
 
-Since v0.8.0, the valve resolves its backing switch through the Entity Registry and stable unique ID, so user-renamed entity IDs are supported.
+The valve resolves its backing switch by stable unique ID when opening, so user-renamed entity IDs are supported. Switch off and valve close send CMD7 directly. On compatible firmware, Stop also clears a paused current session. See [pause, resume and stop](docs/session-controls.md#pause-resume-or-stop-from-a-device-page) for how to stop a paused session.
 
 ## Entity services
 
-### `switch.pause`
+### `linktap.pause`
 
 Pause or unpause a LinkTap watering plan through a LinkTap switch entity.
 
@@ -286,7 +294,7 @@ Pause or unpause a LinkTap watering plan through a LinkTap switch entity.
 | `entity_id` | yes | LinkTap switch entity |
 | `hours` | no | Pause duration in hours; default `1`; `0` unpauses |
 
-### `valve.pause_valve`
+### `linktap.pause_valve`
 
 Pause or unpause through a LinkTap valve entity.
 
@@ -295,20 +303,32 @@ Pause or unpause through a LinkTap valve entity.
 | `entity_id` | yes | LinkTap valve entity |
 | `hours` | no | Pause duration in hours; default `1`; `0` unpauses |
 
-### `valve.start_watering`
+Both plan actions use whole hours from `0` to `240`. Numeric fractions truncate toward zero, so `1.9` means `1` hour and `0.9` means resume. For example, in **Developer tools → Actions**, target the valve to suspend its plan for 12 hours:
+
+```yaml
+action: linktap.pause_valve
+target:
+  entity_id: valve.garden_tap
+data:
+  hours: 12
+```
+
+Replace `valve.garden_tap` with the valve ID from your own entity registry. Use `hours: 0` to resume the plan.
+
+### `linktap.start_watering`
 
 Start watering through a LinkTap valve entity for an explicit duration in seconds.
 
 | Field | Required | Description |
 |---|---|---|
 | `entity_id` | yes | LinkTap valve entity |
-| `seconds` | no | Watering duration in seconds; registered default `9000` |
+| `seconds` | no | Whole seconds from `3` to `86340`; default `9000` when omitted |
 
-This service is **separate from the normal Watering Duration/Watering Volume** helper path.
+Supply an explicit duration. The LinkTap API specifies a 60-second minimum for G1 and G2 hardware. A duration of `0` is rejected. To use the duration and volume helpers, set them and call `switch.turn_on` on the main switch or `valve.open_valve` on the valve.
 
 ### Alert dismissal
 
-The binary-sensor platform also exposes entity services for dismissing one alert or all applicable alerts.
+`linktap.dismiss_alert` and `linktap.dismiss_alerts` target LinkTap binary sensors to dismiss one alert or all applicable alerts. See the [session control actions](docs/session-controls.md#home-assistant-action-examples) for `linktap.pause_current_watering` and `linktap.resume_current_watering`.
 
 ## Watering plans and scheduling
 
@@ -388,6 +408,10 @@ Current releases also contain restart double-count protection and protection aga
 
 This is intentional. A second positive LinkTap water-plan pause request has been observed to deactivate the underlying watering plan despite a successful gateway response, so the integration blocks it.
 
+### Gateway replies are malformed or controls are unavailable
+
+An unexpected gateway response means Home Assistant received a reply it could not use. Check that the gateway address is correct and the Local HTTP API is enabled. Review the setup error before reloading the integration. For missing session controls, RF loss or an unverified watering action, see [session troubleshooting](docs/session-controls.md#troubleshooting).
+
 ## Recent changes
 
 ### v0.8.4
@@ -430,7 +454,7 @@ When reporting an issue, please include:
 
 - integration version;
 - Home Assistant version;
-- LinkTap gateway/device model;
+- LinkTap gateway/device model and complete firmware version;
 - whether the action originated from Home Assistant, the LinkTap app, MQTT or the physical device;
 - relevant logs;
 - raw/current entity values involved;
