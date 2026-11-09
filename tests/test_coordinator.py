@@ -40,6 +40,15 @@ def _make_refresh(coordinator, *, success=True, paused=False):
 
 
 class TestAsyncSetWaterPlanPause:
+    @pytest.fixture(autouse=True)
+    def short_poll_deadline(self):
+        """Exercise bounded polling without waiting 30s on rejection cases."""
+        with (
+            patch("custom_components.linktap.COMMAND_VERIFY_TIMEOUT", 0.02),
+            patch("custom_components.linktap.COMMAND_VERIFY_INTERVAL", 0),
+        ):
+            yield
+
     async def test_negative_hours_raises_immediately(self, coordinator):
         with pytest.raises(HomeAssistantError, match="cannot be negative"):
             await coordinator.async_set_water_plan_pause(-1)

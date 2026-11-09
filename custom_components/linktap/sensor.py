@@ -9,6 +9,7 @@ import homeassistant.helpers.config_validation as cv
 import homeassistant.util.dt as dt_util
 import voluptuous as vol
 from homeassistant.components.sensor import (
+    RestoreSensor,
     SensorDeviceClass,
     SensorEntity,
     SensorStateClass,
@@ -16,7 +17,6 @@ from homeassistant.components.sensor import (
 from homeassistant.const import UnitOfVolumeFlowRate
 from homeassistant.helpers.entity import *
 from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
@@ -86,6 +86,8 @@ async def async_setup_entry(
         sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="plan_mode", unit="mode", icon="mdi:note"))
         sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="plan_sn", unit="sn", icon="mdi:note"))
         sensors.append(LinktapSensor(coordinator, hass, tap, data_attribute="plan_mode_string", unit="mode", icon="mdi:note"))
+        if getattr(coordinator.tap_api, "session_pause_supported", False) is True:
+            sensors.append(LinktapCurrentPauseRemainingSensor(coordinator, tap))
     async_add_entities(sensors, True)
 
 
@@ -158,7 +160,10 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
     def state(self):
         attributes = self.coordinator.data
         _LOGGER.debug(f"Sensor state: {attributes}")
-        if not attributes:
+        if not attributes or (
+            self.attribute in {"remain_duration", "total_duration", "speed", "volume", "volume_limit"}
+            and self.coordinator.runtime_status is None
+        ):
             self._state = "unknown"
         else:
             if self.attribute == "plan_mode_string":
@@ -170,15 +175,18 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
                 #
                 # Preserve the reported remaining duration while paused so a
                 # paused watering session can still show how much time remains.
-                is_watering = bool(attributes.get("is_watering", False))
-                is_paused = bool(attributes.get("is_paused", False))
-                self._state = (
-                    attributes[self.attribute]
-                    if is_watering or is_paused
-                    else 0
-                )
+                is_watering = self.coordinator.watering_state
+                session_paused = self.coordinator.confirmed_session_paused
+                if is_watering is True or session_paused is True:
+                    self._state = attributes.get(self.attribute, "unknown")
+                elif is_watering is False and (
+                    session_paused is False or not self.coordinator.supports_session_pause
+                ):
+                    self._state = 0
+                else:
+                    self._state = "unknown"
             else:
-                self._state = attributes[self.attribute]
+                self._state = attributes.get(self.attribute, "unknown")
 
         return self._state
 
@@ -187,7 +195,18 @@ class LinktapSensor(CoordinatorEntity, SensorEntity):
         return self._attr_device_info
 
 
-class LinktapVolumeTotalSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
+async def _restore_cumulative_value(entity):
+    """Restore numeric data saved during an outage, or a v0.8.9 state."""
+    data = await entity.async_get_last_sensor_data()
+    state = await entity.async_get_last_state()
+    try:
+        value = float(data.native_value if data is not None else (state.state if state else None))
+    except (TypeError, ValueError):
+        return None
+    return value if math.isfinite(value) and value >= 0 else None
+
+
+class LinktapVolumeTotalSensor(CoordinatorEntity, RestoreSensor):
     # Modern HA naming: entity name is relative to the device name.
     _attr_has_entity_name = True
 
@@ -214,22 +233,10 @@ class LinktapVolumeTotalSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
-        state = await self.async_get_last_state()
-        if state and state.state not in ("unknown", "unavailable"):
-            try:
-                restored_total = float(state.state)
-                if math.isfinite(restored_total) and restored_total >= 0:
-                    self._total = restored_total
-                    self._restored = True
-                else:
-                    _LOGGER.warning(
-                        "Ignoring invalid restored Volume Total %s for LinkTap %s",
-                        state.state,
-                        self.tap_id,
-                    )
-                    self._total = 0.0
-            except (TypeError, ValueError):
-                self._total = 0.0
+        restored_total = await _restore_cumulative_value(self)
+        if restored_total is not None:
+            self._total = restored_total
+            self._restored = True
 
     def _validated_current_volume(self):
         """Return a safe raw session-volume sample, or None if rejected.
@@ -267,7 +274,13 @@ class LinktapVolumeTotalSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
         except (TypeError, ValueError):
             volume_limit = 0.0
 
-        if math.isfinite(volume_limit) and volume_limit > 0:
+        # When idle, volume is the previous session's result and volume_limit
+        # is a persistent setting, not that session's target (CMD3 contract).
+        if (
+            (self.coordinator.watering_state is True
+             or self.coordinator.confirmed_session_paused is True)
+            and math.isfinite(volume_limit) and volume_limit > 0
+        ):
             contextual_ceiling = max(
                 volume_limit * VOLUME_LIMIT_MULTIPLIER,
                 volume_limit + VOLUME_LIMIT_ABSOLUTE_TOLERANCE,
@@ -288,13 +301,16 @@ class LinktapVolumeTotalSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
         return current
 
     def _handle_coordinator_update(self) -> None:
-        if not self.coordinator.data:
+        if self.coordinator.runtime_status is None:
+            # Publish CoordinatorEntity availability even with no usable volume.
+            super()._handle_coordinator_update()
             return
 
         current = self._validated_current_volume()
         if current is None:
             # Critical for #94: leave both _previous_volume and _total untouched.
             # The next sane sample therefore cannot latch the rejected value.
+            super()._handle_coordinator_update()
             return
 
         if self._restored:
@@ -314,7 +330,7 @@ class LinktapVolumeTotalSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
         return round(self._total + self._previous_volume, 1)
 
 
-class LinktapWateringTimeTotalSensor(CoordinatorEntity, RestoreEntity, SensorEntity):
+class LinktapWateringTimeTotalSensor(CoordinatorEntity, RestoreSensor):
     # Modern HA naming: entity name is relative to the device name.
     _attr_has_entity_name = True
 
@@ -335,34 +351,68 @@ class LinktapWateringTimeTotalSensor(CoordinatorEntity, RestoreEntity, SensorEnt
             configuration_url="http://" + tap[GW_IP] + "/"
         )
         self._total = 0.0
-        self._previous_watering = False
         self._session_start = None
+        self._last_confirmed_at = None
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
-        state = await self.async_get_last_state()
-        if state and state.state not in ("unknown", "unavailable"):
-            try:
-                self._total = float(state.state)
-            except ValueError:
-                self._total = 0.0
+        restored_total = await _restore_cumulative_value(self)
+        if restored_total is not None:
+            self._total = restored_total
 
     def _handle_coordinator_update(self) -> None:
-        if not self.coordinator.data:
-            return
-        is_watering = self.coordinator.data.get("is_watering", False)
+        is_watering = self.coordinator.watering_state
         now = dt_util.utcnow()
-        if is_watering and not self._previous_watering:
-            self._session_start = now
-        elif not is_watering and self._previous_watering and self._session_start:
-            self._total += (now - self._session_start).total_seconds()
+        if is_watering is True:
+            if self._session_start is None:
+                self._session_start = now
+            self._last_confirmed_at = now
+        elif self._session_start is not None:
+            # Do not count an RF outage as watering. End at the last confirmed
+            # sample if the physical transition time cannot be observed.
+            end = now if is_watering is False else self._last_confirmed_at
+            self._total += max(0, (end - self._session_start).total_seconds())
             self._session_start = None
-        self._previous_watering = is_watering
         self.async_write_ha_state()
 
     @property
     def native_value(self):
         if self._session_start is not None:
-            elapsed = (dt_util.utcnow() - self._session_start).total_seconds()
+            end = (dt_util.utcnow() if self.coordinator.watering_state is True
+                   else self._last_confirmed_at)
+            elapsed = max(0, (end - self._session_start).total_seconds())
             return round(self._total + elapsed, 1)
         return round(self._total, 1)
+
+
+class LinktapCurrentPauseRemainingSensor(CoordinatorEntity, SensorEntity):
+    _attr_has_entity_name = True
+    _attr_name = "Pause Remaining"
+    _attr_icon = "mdi:timer-sand"
+    _attr_native_unit_of_measurement = "s"
+
+    def __init__(self, coordinator, tap):
+        super().__init__(coordinator)
+        self._attr_unique_id = slugify(f"{DOMAIN}_sensor_current_pause_remaining_{tap[TAP_ID]}")
+        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, tap[TAP_ID])}, name=tap[NAME], manufacturer=MANUFACTURER, model=tap[TAP_ID], configuration_url="http://" + tap[GW_IP] + "/")
+
+    @property
+    def native_value(self):
+        paused = self.coordinator.confirmed_session_paused
+        if paused is None:
+            return None
+        if paused is False:
+            return 0
+        until = getattr(self.coordinator, "current_pause_until", None)
+        if until is None:
+            return None
+        return max(0, int((until - dt_util.utcnow()).total_seconds()))
+
+    @property
+    def extra_state_attributes(self):
+        paused = self.coordinator.confirmed_session_paused is True
+        mode = self.coordinator.current_pause_mode if paused else None
+        return {
+            "expiry_known": paused and self.coordinator.current_pause_until is not None,
+            "resume_behaviour": {0: "Keep Original End Time", 1: "Complete Full Watering Duration"}.get(mode),
+        }

@@ -41,6 +41,46 @@ pause_valve:
       integration: linktap
       domain: valve
 
+pause_current_watering:
+  name: Pause current watering
+  description: Pause an active watering process on gateways with CMD19-capable firmware.
+  fields:
+    hours:
+      name: Hours
+      example: 0.1
+      description: Pause duration in hours, from 0.01 to 240.
+      required: true
+      selector:
+        number:
+          min: 0.01
+          max: 240
+          step: 0.01
+          mode: box
+    mode:
+      name: Pause mode
+      description: Keep the original end time, or complete the full watering duration after resuming.
+      required: true
+      default: keep_end_time
+      selector:
+        select:
+          options:
+            - label: Keep Original End Time
+              value: keep_end_time
+            - label: Complete Full Watering Duration
+              value: complete_duration
+  target:
+    entity:
+      integration: linktap
+      domain: valve
+
+resume_current_watering:
+  name: Resume current watering
+  description: Resume a watering process paused using CMD19-capable firmware.
+  target:
+    entity:
+      integration: linktap
+      domain: valve
+
 start_watering:
   name: Start Watering for X seconds
   description: Turn on a valve for a set time

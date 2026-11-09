@@ -39,6 +39,10 @@ async def async_setup_entry(
         binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, data_attribute="is_manual_mode", icon="mdi:account-switch"))
         binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, data_attribute="is_watering", icon="mdi:water"))
         binary_sensors.append(LinktapBinarySensor(coordinator, hass, tap=tap, data_attribute="is_paused", icon="mdi:pause"))
+        if getattr(coordinator.tap_api, "session_pause_supported", False) is True:
+            binary_sensors.append(LinktapBinarySensor(
+                coordinator, hass, tap=tap, name="Current Session Paused",
+                data_attribute="is_paused_sess", icon="mdi:pause-circle-outline"))
     async_add_entities(binary_sensors, True)
 
     platform = entity_platform.async_get_current_platform()
@@ -114,7 +118,15 @@ class LinktapBinarySensor(CoordinatorEntity, BinarySensorEntity):
 
     @property
     def state(self):
-        attributes = self.coordinator.data
+        attributes = self.coordinator.data or {}
+        state_property = {
+            "is_watering": "watering_state",
+            "is_paused_sess": "confirmed_session_paused",
+            "is_paused": "plan_paused",
+        }.get(self._data_check_attribute)
+        if state_property:
+            value = getattr(self.coordinator, state_property)
+            return "unknown" if value is None else ("on" if value else "off")
         if self._data_check_attribute in attributes:
             data_attr = attributes[self._data_check_attribute]
             state = "on" if data_attr else "off"

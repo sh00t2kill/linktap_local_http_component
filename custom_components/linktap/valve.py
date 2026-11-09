@@ -14,9 +14,7 @@ from homeassistant.const import (
     SERVICE_TURN_OFF,
     SERVICE_TURN_ON,
     STATE_OFF,
-    STATE_ON,
 )
-from homeassistant.core import Event, EventStateChangedData, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_platform
 from homeassistant.helpers import entity_registry as er
@@ -32,6 +30,13 @@ from homeassistant.util import slugify
 _LOGGER = logging.getLogger(__name__)
 
 from .const import ATTR_STATE, DOMAIN, GW_IP, MANUFACTURER, NAME, TAP_ID
+
+ENHANCED_PAUSE_MIN_HOURS = 0.01
+ENHANCED_PAUSE_MAX_HOURS = 240.0
+PAUSE_MODE_OPTIONS = {
+    "keep_end_time": 0,
+    "complete_duration": 1,
+}
 
 
 def _switch_entity_id(hass, tap_id):
@@ -63,6 +68,22 @@ async def async_setup_entry(
         {vol.Required("seconds", default=9000): vol.Coerce(int)},
         "_start_watering"
         )
+    platform.async_register_entity_service(
+        "pause_current_watering",
+        {
+            vol.Required("hours", default=1): vol.All(
+                vol.Coerce(float),
+                vol.Range(min=ENHANCED_PAUSE_MIN_HOURS, max=ENHANCED_PAUSE_MAX_HOURS),
+            ),
+            vol.Required("mode", default="keep_end_time"): vol.In(PAUSE_MODE_OPTIONS),
+        },
+        "_pause_current_watering",
+    )
+    platform.async_register_entity_service(
+        "resume_current_watering",
+        {},
+        "_resume_current_watering",
+    )
 
 
 class LinktapValve(CoordinatorEntity, ValveEntity):
@@ -122,14 +143,7 @@ class LinktapValve(CoordinatorEntity, ValveEntity):
 
     async def async_close_valve(self, **kwargs):
         """Close valve."""
-        switch_entity = self._require_switch_entity()
-        await self.hass.services.async_call(
-            SWITCH_DOMAIN,
-            SERVICE_TURN_OFF,
-            {ATTR_ENTITY_ID: switch_entity},
-            blocking=True,
-            context=self._context,
-        )
+        await self.coordinator.async_safe_stop_watering()
         await self.coordinator.async_request_refresh()
 
     @property
@@ -138,35 +152,18 @@ class LinktapValve(CoordinatorEntity, ValveEntity):
         self._attrs["switch"] = self.switch_entity
         return self._attrs
 
-    @callback
-    def async_state_changed_listener(
-        self, event: Event[EventStateChangedData] | None = None
-    ) -> None:
-        """Handle child updates."""
-        super().async_state_changed_listener(event)
-        switch_entity = self.switch_entity
-        if (
-            not self.available
-            or switch_entity is None
-            or (state := self.hass.states.get(switch_entity)) is None
-        ):
-            return
-
-        self._attr_is_closed = state.state != STATE_ON
+    @property
+    def is_closed(self):
+        watering = self.coordinator.watering_state
+        return None if watering is None else not watering
 
     @property
     def state(self):
         status = self.coordinator.data
         self._attrs["data"] = status
-        self._attrs[ATTR_STATE] = status[ATTR_STATE]
-        state = "unknown"
-        if status[ATTR_STATE]:
-            state = "open"
-        elif not status[ATTR_STATE]:
-            state = "closed"
-            _LOGGER.debug(f"Valve {self.entity_id} state {state}")
-        self._attr_is_closed = state != "open"
-        return state
+        watering = self.coordinator.watering_state
+        self._attrs[ATTR_STATE] = watering
+        return "unknown" if watering is None else ("open" if watering else "closed")
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -178,10 +175,19 @@ class LinktapValve(CoordinatorEntity, ValveEntity):
         _LOGGER.debug(f"Pausing {self.entity_id} for {hours} hours")
         await self.coordinator.async_set_water_plan_pause(hours)
 
-    async def _start_watering(self, seconds=False):
-        if not seconds or seconds == 0:
-            seconds = 1439 * 60
+    async def _pause_current_watering(self, hours=1, mode="keep_end_time"):
+        """Pause the current session through the shared CMD19 operation."""
+        if mode not in PAUSE_MODE_OPTIONS:
+            raise HomeAssistantError(f"Unknown LinkTap pause mode: {mode}")
+        await self.coordinator.async_pause_current_watering(hours, PAUSE_MODE_OPTIONS[mode])
+
+    async def _resume_current_watering(self):
+        """Resume the current session through the shared CMD19 operation."""
+        await self.coordinator.async_resume_current_watering()
+
+    async def _start_watering(self, seconds=9000):
+        if not 3 <= seconds <= 86340:
+            raise HomeAssistantError("Watering duration must be from 3 to 86340 seconds")
         _LOGGER.debug(f"Starting watering via service call for {seconds} seconds")
-        gw_id = self.coordinator.get_gw_id()
-        await self.coordinator.tap_api.turn_on(gw_id, self.tap_id, seconds)
+        await self.coordinator.async_start_watering(seconds)
         await self.coordinator.async_request_refresh()
